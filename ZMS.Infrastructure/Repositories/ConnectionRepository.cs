@@ -14,12 +14,20 @@ public class ConnectionRepository : IConnectionRepository
         _dbContext = dbContext;
     }
 
-    public async Task<IReadOnlyCollection<ConnectionProfile>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<ConnectionProfile>> ListAsync(string userId, CancellationToken cancellationToken)
     {
         return await _dbContext.Connections
             .AsNoTracking()
+            .Where(connection => connection.UserId == userId)
             .OrderBy(connection => connection.Name)
             .ToListAsync(cancellationToken);
+    }
+
+    public Task<ConnectionProfile?> GetByIdAsync(Guid id, string userId, CancellationToken cancellationToken)
+    {
+        return _dbContext.Connections
+            .AsNoTracking()
+            .FirstOrDefaultAsync(connection => connection.Id == id && connection.UserId == userId, cancellationToken);
     }
 
     public Task<ConnectionProfile?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

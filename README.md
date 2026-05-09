@@ -31,7 +31,7 @@ dotnet run --project .\ZMS.API\ZMS.API.csproj
 
 The API is configured to use Microsoft Graph upload sessions for files larger than 10 MB, with 6.25 MB chunks. This keeps demos and production runs on the resumable upload path before the Graph simple-upload 250 MB ceiling.
 
-Useful backend settings:
+Useful backend settings: 
 
 ```text
 MigrationEngine__LargeFileUploadThresholdBytes=10485760

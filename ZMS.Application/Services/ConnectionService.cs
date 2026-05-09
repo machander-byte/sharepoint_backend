@@ -25,10 +25,10 @@ public class ConnectionService : IConnectionService
         _secretProtector = secretProtector;
     }
 
-    public Task<IReadOnlyCollection<ConnectionProfile>> ListAsync(CancellationToken cancellationToken)
-        => _connectionRepository.ListAsync(cancellationToken);
+    public Task<IReadOnlyCollection<ConnectionProfile>> ListAsync(string userId, CancellationToken cancellationToken)
+        => _connectionRepository.ListAsync(userId, cancellationToken);
 
-    public async Task<ConnectionProfile> CreateAsync(CreateConnectionRequest request, CancellationToken cancellationToken)
+    public async Task<ConnectionProfile> CreateAsync(CreateConnectionRequest request, string userId, CancellationToken cancellationToken)
     {
         ValidateRequest(request);
 
@@ -55,6 +55,7 @@ public class ConnectionService : IConnectionService
 
         var connection = new ConnectionProfile
         {
+            UserId = userId,
             Name = request.Name.Trim(),
             Type = request.Type,
             Url = url,
@@ -77,9 +78,9 @@ public class ConnectionService : IConnectionService
         return connection;
     }
 
-    public async Task<ConnectionTestResult> TestConnectionAsync(Guid connectionId, CancellationToken cancellationToken)
+    public async Task<ConnectionTestResult> TestConnectionAsync(Guid connectionId, string userId, CancellationToken cancellationToken)
     {
-        var connection = await _connectionRepository.GetByIdAsync(connectionId, cancellationToken)
+        var connection = await _connectionRepository.GetByIdAsync(connectionId, userId, cancellationToken)
             ?? throw new KeyNotFoundException($"Connection '{connectionId}' was not found.");
         var connectorConnection = connection.WithUnprotectedSecrets(_secretProtector);
 

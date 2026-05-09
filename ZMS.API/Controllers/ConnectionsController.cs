@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZMS.API.Contracts;
 using ZMS.API.Contracts.Connections;
+using ZMS.API.Extensions;
 using ZMS.Application.Contracts;
 
 namespace ZMS.API.Controllers;
@@ -17,20 +19,24 @@ public class ConnectionsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<IReadOnlyCollection<ConnectionResponseDto>>> GetAll(CancellationToken cancellationToken)
     {
-        var connections = await _connectionService.ListAsync(cancellationToken);
+        var userId = User.GetUserId();
+        var connections = await _connectionService.ListAsync(userId, cancellationToken);
         return Ok(connections.Select(connection => connection.ToResponse()).ToArray());
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult<ConnectionResponseDto>> Create(
         [FromBody] CreateConnectionRequestDto request,
         CancellationToken cancellationToken)
     {
         try
         {
-            var connection = await _connectionService.CreateAsync(request.ToApplicationRequest(), cancellationToken);
+            var userId = User.GetUserId();
+            var connection = await _connectionService.CreateAsync(request.ToApplicationRequest(), userId, cancellationToken);
             return Created($"/api/connections/{connection.Id}", connection.ToResponse());
         }
         catch (InvalidOperationException exception)
@@ -40,9 +46,11 @@ public class ConnectionsController : ControllerBase
     }
 
     [HttpPost("{connectionId:guid}/test")]
+    [Authorize]
     public async Task<ActionResult<ConnectionTestResponseDto>> Test(Guid connectionId, CancellationToken cancellationToken)
     {
-        var result = await _connectionService.TestConnectionAsync(connectionId, cancellationToken);
+        var userId = User.GetUserId();
+        var result = await _connectionService.TestConnectionAsync(connectionId, userId, cancellationToken);
         return Ok(result.ToResponse());
     }
 }

@@ -40,21 +40,24 @@ public class MigrationService : IMigrationService
         _migrationEngineOptions = migrationEngineOptions.Value;
     }
 
-    public Task<IReadOnlyCollection<MigrationJob>> ListJobsAsync(CancellationToken cancellationToken)
-        => _jobRepository.ListAsync(cancellationToken);
+    public Task<IReadOnlyCollection<MigrationJob>> ListJobsAsync(string userId, CancellationToken cancellationToken)
+        => _jobRepository.ListAsync(userId, cancellationToken);
 
-    public Task<MigrationJob?> GetJobAsync(Guid jobId, CancellationToken cancellationToken)
-        => _jobRepository.GetByIdAsync(jobId, cancellationToken);
+    public Task<MigrationJob?> GetJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
+        => _jobRepository.GetByIdAsync(jobId, userId, cancellationToken);
 
-    public Task<IReadOnlyCollection<MigrationItem>> GetJobItemsAsync(Guid jobId, CancellationToken cancellationToken)
-        => _itemRepository.GetByJobIdAsync(jobId, cancellationToken);
-
-    public async Task<MigrationJob> CreateJobAsync(CreateMigrationJobRequest request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<MigrationItem>> GetJobItemsAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
-        var sourceConnection = await _connectionRepository.GetByIdAsync(request.SourceConnectionId, cancellationToken)
+        await RequireJobAsync(jobId, userId, cancellationToken);
+        return await _itemRepository.GetByJobIdAsync(jobId, cancellationToken);
+    }
+
+    public async Task<MigrationJob> CreateJobAsync(CreateMigrationJobRequest request, string userId, CancellationToken cancellationToken)
+    {
+        var sourceConnection = await _connectionRepository.GetByIdAsync(request.SourceConnectionId, userId, cancellationToken)
             ?? throw new KeyNotFoundException($"Source connection '{request.SourceConnectionId}' was not found.");
 
-        var targetConnection = await _connectionRepository.GetByIdAsync(request.TargetConnectionId, cancellationToken)
+        var targetConnection = await _connectionRepository.GetByIdAsync(request.TargetConnectionId, userId, cancellationToken)
             ?? throw new KeyNotFoundException($"Target connection '{request.TargetConnectionId}' was not found.");
 
         if (!_connectorResolver.CanResolveSource(sourceConnection.Type))
@@ -77,6 +80,7 @@ public class MigrationService : IMigrationService
 
         var job = new MigrationJob
         {
+            UserId = userId,
             Name = request.Name.Trim(),
             SourceConnectionId = request.SourceConnectionId,
             TargetConnectionId = request.TargetConnectionId,
@@ -100,9 +104,9 @@ public class MigrationService : IMigrationService
         return job;
     }
 
-    public async Task StartJobAsync(Guid jobId, CancellationToken cancellationToken)
+    public async Task StartJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
-        var job = await RequireJobAsync(jobId, cancellationToken);
+        var job = await RequireJobAsync(jobId, userId, cancellationToken);
 
         if (job.Status is JobStatus.Running or JobStatus.Queued)
         {
@@ -131,18 +135,18 @@ public class MigrationService : IMigrationService
         await _jobQueue.EnqueueAsync(job.Id, cancellationToken);
     }
 
-    public async Task PauseJobAsync(Guid jobId, CancellationToken cancellationToken)
+    public async Task PauseJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
-        var job = await RequireJobAsync(jobId, cancellationToken);
+        var job = await RequireJobAsync(jobId, userId, cancellationToken);
         job.Status = JobStatus.Paused;
         job.UpdatedUtc = DateTimeOffset.UtcNow;
         await _jobRepository.UpdateAsync(job, cancellationToken);
         await WriteLogAsync(job.Id, null, LogSeverity.Warning, "The job was paused.", null, cancellationToken);
     }
 
-    public async Task ResumeJobAsync(Guid jobId, CancellationToken cancellationToken)
+    public async Task ResumeJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
-        var job = await RequireJobAsync(jobId, cancellationToken);
+        var job = await RequireJobAsync(jobId, userId, cancellationToken);
         job.Status = JobStatus.Queued;
         job.UpdatedUtc = DateTimeOffset.UtcNow;
         await _jobRepository.UpdateAsync(job, cancellationToken);
@@ -163,7 +167,7 @@ public class MigrationService : IMigrationService
             return;
         }
 
-        var sourceConnection = await _connectionRepository.GetByIdAsync(job.SourceConnectionId, cancellationToken)
+        var sourceConnection = await _connectionRepository.GetByIdAsync(job.SourceConnectionId, job.UserId, cancellationToken)
             ?? throw new KeyNotFoundException($"Source connection '{job.SourceConnectionId}' was not found.");
         sourceConnection = sourceConnection.WithUnprotectedSecrets(_secretProtector);
 
@@ -205,9 +209,9 @@ public class MigrationService : IMigrationService
             cancellationToken);
     }
 
-    private async Task<MigrationJob> RequireJobAsync(Guid jobId, CancellationToken cancellationToken)
+    private async Task<MigrationJob> RequireJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
-        return await _jobRepository.GetByIdAsync(jobId, cancellationToken)
+        return await _jobRepository.GetByIdAsync(jobId, userId, cancellationToken)
             ?? throw new KeyNotFoundException($"Migration job '{jobId}' was not found.");
     }
 

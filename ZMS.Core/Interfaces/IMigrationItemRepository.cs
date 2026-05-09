@@ -12,7 +12,7 @@ public interface IMigrationItemRepository
         int batchSize,
         CancellationToken cancellationToken);
 
-    Task<int> CountByStatusAsync(MigrationItemStatus status, CancellationToken cancellationToken);
+    Task<int> CountByStatusAsync(string userId, MigrationItemStatus status, CancellationToken cancellationToken);
     Task AddRangeAsync(IEnumerable<MigrationItem> items, CancellationToken cancellationToken);
     Task UpdateAsync(MigrationItem item, CancellationToken cancellationToken);
 }

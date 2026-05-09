@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ZMS.API.Extensions;
 using ZMS.Application.Contracts;
 
 namespace ZMS.API.Controllers;
@@ -15,9 +17,11 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("summary")]
+    [Authorize]
     public async Task<IActionResult> GetSummary(CancellationToken cancellationToken)
     {
-        var summary = await _dashboardService.GetSummaryAsync(cancellationToken);
+        var userId = User.GetUserId();
+        var summary = await _dashboardService.GetSummaryAsync(userId, cancellationToken);
         return Ok(summary);
     }
 }

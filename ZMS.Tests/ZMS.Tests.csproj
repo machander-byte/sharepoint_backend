@@ -9,12 +9,17 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ZMS.API\ZMS.API.csproj" />
+    <ProjectReference Include="..\ZMS.Application\ZMS.Application.csproj" />
     <ProjectReference Include="..\ZMS.Connectors.GoogleDrive\ZMS.Connectors.GoogleDrive.csproj" />
+    <ProjectReference Include="..\ZMS.Core\ZMS.Core.csproj" />
+    <ProjectReference Include="..\ZMS.Infrastructure\ZMS.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

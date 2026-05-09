@@ -129,6 +129,7 @@ static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
         CREATE TABLE IF NOT EXISTS "Connections"
         (
             "Id" uuid NOT NULL PRIMARY KEY,
+            "UserId" character varying(200) NOT NULL,
             "Name" character varying(200) NOT NULL,
             "Type" character varying(50) NOT NULL,
             "Url" character varying(500) NOT NULL,
@@ -149,6 +150,7 @@ static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
         CREATE TABLE IF NOT EXISTS "MigrationJobs"
         (
             "Id" uuid NOT NULL PRIMARY KEY,
+            "UserId" character varying(200) NOT NULL,
             "Name" character varying(200) NOT NULL,
             "SourceConnectionId" uuid NOT NULL,
             "TargetConnectionId" uuid NOT NULL,
@@ -211,6 +213,10 @@ static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
         """);
 
     await dbContext.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"Connections\" ADD COLUMN IF NOT EXISTS \"UserId\" character varying(200) NOT NULL DEFAULT '';");
+    await dbContext.Database.ExecuteSqlRawAsync(
+        "ALTER TABLE \"MigrationJobs\" ADD COLUMN IF NOT EXISTS \"UserId\" character varying(200) NOT NULL DEFAULT '';");
+    await dbContext.Database.ExecuteSqlRawAsync(
         "ALTER TABLE \"MigrationJobs\" ADD COLUMN IF NOT EXISTS \"TargetLibraryUrlSegment\" character varying(200) NULL;");
     await dbContext.Database.ExecuteSqlRawAsync(
         "ALTER TABLE \"MigrationJobs\" ADD COLUMN IF NOT EXISTS \"TargetRootPath\" character varying(500) NULL;");
@@ -247,17 +253,30 @@ static async Task EnsureMigrationJobColumnsAsync(ZmsDbContext dbContext)
 {
     if (dbContext.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
     {
-        var existingColumns = await GetSqliteColumnsAsync(dbContext, "MigrationJobs");
-        if (!existingColumns.Contains("TargetLibraryUrlSegment"))
+        var existingMigrationJobColumns = await GetSqliteColumnsAsync(dbContext, "MigrationJobs");
+        if (!existingMigrationJobColumns.Contains("UserId"))
+        {
+            await dbContext.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE \"MigrationJobs\" ADD COLUMN \"UserId\" TEXT NOT NULL DEFAULT '';" );
+        }
+
+        if (!existingMigrationJobColumns.Contains("TargetLibraryUrlSegment"))
         {
             await dbContext.Database.ExecuteSqlRawAsync(
                 "ALTER TABLE \"MigrationJobs\" ADD COLUMN \"TargetLibraryUrlSegment\" TEXT NULL;");
         }
 
-        if (!existingColumns.Contains("TargetRootPath"))
+        if (!existingMigrationJobColumns.Contains("TargetRootPath"))
         {
             await dbContext.Database.ExecuteSqlRawAsync(
                 "ALTER TABLE \"MigrationJobs\" ADD COLUMN \"TargetRootPath\" TEXT NULL;");
+        }
+
+        var existingConnectionColumns = await GetSqliteColumnsAsync(dbContext, "Connections");
+        if (!existingConnectionColumns.Contains("UserId"))
+        {
+            await dbContext.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE \"Connections\" ADD COLUMN \"UserId\" TEXT NOT NULL DEFAULT '';" );
         }
 
         return;
@@ -266,13 +285,21 @@ static async Task EnsureMigrationJobColumnsAsync(ZmsDbContext dbContext)
     if (dbContext.Database.ProviderName?.Contains("SqlServer", StringComparison.OrdinalIgnoreCase) == true)
     {
         await dbContext.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('MigrationJobs', 'UserId') IS NULL ALTER TABLE [MigrationJobs] ADD [UserId] nvarchar(200) NOT NULL DEFAULT '';" );
+        await dbContext.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('MigrationJobs', 'TargetLibraryUrlSegment') IS NULL ALTER TABLE [MigrationJobs] ADD [TargetLibraryUrlSegment] nvarchar(200) NULL;");
         await dbContext.Database.ExecuteSqlRawAsync(
             "IF COL_LENGTH('MigrationJobs', 'TargetRootPath') IS NULL ALTER TABLE [MigrationJobs] ADD [TargetRootPath] nvarchar(500) NULL;");
+        await dbContext.Database.ExecuteSqlRawAsync(
+            "IF COL_LENGTH('Connections', 'UserId') IS NULL ALTER TABLE [Connections] ADD [UserId] nvarchar(200) NOT NULL DEFAULT '';" );
     }
 
     if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
     {
+        await dbContext.Database.ExecuteSqlRawAsync(
+            "ALTER TABLE \"MigrationJobs\" ADD COLUMN IF NOT EXISTS \"UserId\" character varying(200) NOT NULL DEFAULT '';" );
+        await dbContext.Database.ExecuteSqlRawAsync(
+            "ALTER TABLE \"Connections\" ADD COLUMN IF NOT EXISTS \"UserId\" character varying(200) NOT NULL DEFAULT '';" );
         await dbContext.Database.ExecuteSqlRawAsync(
             "ALTER TABLE \"MigrationJobs\" ADD COLUMN IF NOT EXISTS \"TargetLibraryUrlSegment\" character varying(200) NULL;");
         await dbContext.Database.ExecuteSqlRawAsync(

@@ -14,6 +14,18 @@ public class MigrationJobRepository : IMigrationJobRepository
         _dbContext = dbContext;
     }
 
+    public async Task<IReadOnlyCollection<MigrationJob>> ListAsync(string userId, CancellationToken cancellationToken)
+    {
+        var jobs = await _dbContext.MigrationJobs
+            .AsNoTracking()
+            .Where(job => job.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        return jobs
+            .OrderByDescending(job => job.CreatedUtc)
+            .ToArray();
+    }
+
     public async Task<IReadOnlyCollection<MigrationJob>> ListAsync(CancellationToken cancellationToken)
     {
         var jobs = await _dbContext.MigrationJobs
@@ -23,6 +35,13 @@ public class MigrationJobRepository : IMigrationJobRepository
         return jobs
             .OrderByDescending(job => job.CreatedUtc)
             .ToArray();
+    }
+
+    public Task<MigrationJob?> GetByIdAsync(Guid id, string userId, CancellationToken cancellationToken)
+    {
+        return _dbContext.MigrationJobs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(job => job.Id == id && job.UserId == userId, cancellationToken);
     }
 
     public Task<MigrationJob?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

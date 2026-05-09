@@ -5,6 +5,7 @@ namespace ZMS.Core.Models;
 public class MigrationJob
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public string UserId { get; set; } = string.Empty; // Supabase sub claim from JWT
     public string Name { get; set; } = string.Empty;
     public Guid SourceConnectionId { get; set; }
     public Guid TargetConnectionId { get; set; }

@@ -20,9 +20,9 @@ public class DiscoveryService : IDiscoveryService
         _secretProtector = secretProtector;
     }
 
-    public async Task<IReadOnlyCollection<SiteInfo>> GetSitesAsync(Guid sourceConnectionId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<SiteInfo>> GetSitesAsync(Guid sourceConnectionId, string userId, CancellationToken cancellationToken)
     {
-        var connection = await GetSourceConnectionAsync(sourceConnectionId, cancellationToken);
+        var connection = await GetSourceConnectionAsync(sourceConnectionId, userId, cancellationToken);
         var connector = _connectorResolver.ResolveSource(connection);
         return await connector.GetSitesAsync(connection, cancellationToken);
     }
@@ -30,9 +30,10 @@ public class DiscoveryService : IDiscoveryService
     public async Task<IReadOnlyCollection<LibraryInfo>> GetLibrariesAsync(
         Guid sourceConnectionId,
         string sourceLocation,
+        string userId,
         CancellationToken cancellationToken)
     {
-        var connection = await GetSourceConnectionAsync(sourceConnectionId, cancellationToken);
+        var connection = await GetSourceConnectionAsync(sourceConnectionId, userId, cancellationToken);
         var connector = _connectorResolver.ResolveSource(connection);
         return await connector.GetLibrariesAsync(connection, sourceLocation, cancellationToken);
     }
@@ -41,9 +42,10 @@ public class DiscoveryService : IDiscoveryService
         Guid sourceConnectionId,
         string sourceLocation,
         string? libraryName,
+        string userId,
         CancellationToken cancellationToken)
     {
-        var connection = await GetSourceConnectionAsync(sourceConnectionId, cancellationToken);
+        var connection = await GetSourceConnectionAsync(sourceConnectionId, userId, cancellationToken);
         var connector = _connectorResolver.ResolveSource(connection);
         var sites = await connector.GetSitesAsync(connection, cancellationToken);
         var libraries = await connector.GetLibrariesAsync(connection, sourceLocation, cancellationToken);
@@ -58,9 +60,9 @@ public class DiscoveryService : IDiscoveryService
         };
     }
 
-    private async Task<ConnectionProfile> GetSourceConnectionAsync(Guid sourceConnectionId, CancellationToken cancellationToken)
+    private async Task<ConnectionProfile> GetSourceConnectionAsync(Guid sourceConnectionId, string userId, CancellationToken cancellationToken)
     {
-        var connection = await _connectionRepository.GetByIdAsync(sourceConnectionId, cancellationToken)
+        var connection = await _connectionRepository.GetByIdAsync(sourceConnectionId, userId, cancellationToken)
             ?? throw new KeyNotFoundException($"Source connection '{sourceConnectionId}' was not found.");
 
         if (!_connectorResolver.CanResolveSource(connection.Type))

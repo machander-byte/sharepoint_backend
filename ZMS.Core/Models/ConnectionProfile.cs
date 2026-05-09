@@ -5,6 +5,7 @@ namespace ZMS.Core.Models;
 public class ConnectionProfile
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public string UserId { get; set; } = string.Empty; // Supabase sub claim from JWT
     public string Name { get; set; } = string.Empty;
     public ConnectionType Type { get; set; }
     public string Url { get; set; } = string.Empty;

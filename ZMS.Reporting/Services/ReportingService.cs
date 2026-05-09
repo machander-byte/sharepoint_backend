@@ -21,9 +21,9 @@ public class ReportingService : IReportingService
         _logRepository = logRepository;
     }
 
-    public async Task<JobReport?> GetJobReportAsync(Guid jobId, CancellationToken cancellationToken)
+    public async Task<JobReport?> GetJobReportAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
-        var job = await _jobRepository.GetByIdAsync(jobId, cancellationToken);
+        var job = await _jobRepository.GetByIdAsync(jobId, userId, cancellationToken);
         if (job is null)
         {
             return null;
@@ -48,9 +48,9 @@ public class ReportingService : IReportingService
         };
     }
 
-    public async Task<ReportFile> ExportJobsCsvAsync(CancellationToken cancellationToken)
+    public async Task<ReportFile> ExportJobsCsvAsync(string userId, CancellationToken cancellationToken)
     {
-        var jobs = await _jobRepository.ListAsync(cancellationToken);
+        var jobs = await _jobRepository.ListAsync(userId, cancellationToken);
         var csv = new CsvBuilder(
             "JobId",
             "Name",
@@ -97,9 +97,9 @@ public class ReportingService : IReportingService
         return CreateCsvFile("migration-runs.csv", csv);
     }
 
-    public async Task<ReportFile?> ExportJobSummaryCsvAsync(Guid jobId, CancellationToken cancellationToken)
+    public async Task<ReportFile?> ExportJobSummaryCsvAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
-        var job = await _jobRepository.GetByIdAsync(jobId, cancellationToken);
+        var job = await _jobRepository.GetByIdAsync(jobId, userId, cancellationToken);
         if (job is null)
         {
             return null;
@@ -135,9 +135,9 @@ public class ReportingService : IReportingService
         return CreateCsvFile($"{SafeFilePart(job.Name)}-summary.csv", csv);
     }
 
-    public async Task<ReportFile?> ExportJobItemsCsvAsync(Guid jobId, CancellationToken cancellationToken)
+    public async Task<ReportFile?> ExportJobItemsCsvAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
-        var job = await _jobRepository.GetByIdAsync(jobId, cancellationToken);
+        var job = await _jobRepository.GetByIdAsync(jobId, userId, cancellationToken);
         if (job is null)
         {
             return null;
@@ -178,9 +178,9 @@ public class ReportingService : IReportingService
         return CreateCsvFile($"{SafeFilePart(job.Name)}-items.csv", csv);
     }
 
-    public async Task<ReportFile?> ExportJobLogsCsvAsync(Guid jobId, CancellationToken cancellationToken)
+    public async Task<ReportFile?> ExportJobLogsCsvAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
-        var job = await _jobRepository.GetByIdAsync(jobId, cancellationToken);
+        var job = await _jobRepository.GetByIdAsync(jobId, userId, cancellationToken);
         if (job is null)
         {
             return null;

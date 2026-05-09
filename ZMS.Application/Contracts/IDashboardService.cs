@@ -4,5 +4,5 @@ namespace ZMS.Application.Contracts;
 
 public interface IDashboardService
 {
-    Task<DashboardSummary> GetSummaryAsync(CancellationToken cancellationToken);
+    Task<DashboardSummary> GetSummaryAsync(string userId, CancellationToken cancellationToken);
 }

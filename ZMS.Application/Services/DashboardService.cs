@@ -21,10 +21,10 @@ public class DashboardService : IDashboardService
         _itemRepository = itemRepository;
     }
 
-    public async Task<DashboardSummary> GetSummaryAsync(CancellationToken cancellationToken)
+    public async Task<DashboardSummary> GetSummaryAsync(string userId, CancellationToken cancellationToken)
     {
-        var connections = await _connectionRepository.ListAsync(cancellationToken);
-        var jobs = await _jobRepository.ListAsync(cancellationToken);
+        var connections = await _connectionRepository.ListAsync(userId, cancellationToken);
+        var jobs = await _jobRepository.ListAsync(userId, cancellationToken);
 
         return new DashboardSummary
         {
@@ -34,7 +34,7 @@ public class DashboardService : IDashboardService
             RunningJobs = jobs.Count(job => job.Status == JobStatus.Running),
             CompletedJobs = jobs.Count(job => job.Status is JobStatus.Completed or JobStatus.CompletedWithErrors),
             FailedJobs = jobs.Count(job => job.Status == JobStatus.Failed),
-            PendingRetryItems = await _itemRepository.CountByStatusAsync(MigrationItemStatus.RetryQueued, cancellationToken),
+            PendingRetryItems = await _itemRepository.CountByStatusAsync(userId, MigrationItemStatus.RetryQueued, cancellationToken),
             GeneratedUtc = DateTimeOffset.UtcNow
         };
     }

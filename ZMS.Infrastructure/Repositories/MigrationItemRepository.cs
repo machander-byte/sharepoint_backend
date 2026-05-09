@@ -44,9 +44,13 @@ public class MigrationItemRepository : IMigrationItemRepository
             .ToArray();
     }
 
-    public Task<int> CountByStatusAsync(MigrationItemStatus status, CancellationToken cancellationToken)
+    public Task<int> CountByStatusAsync(string userId, MigrationItemStatus status, CancellationToken cancellationToken)
     {
-        return _dbContext.MigrationItems.CountAsync(item => item.Status == status, cancellationToken);
+        return (from item in _dbContext.MigrationItems.AsNoTracking()
+                join job in _dbContext.MigrationJobs.AsNoTracking() on item.JobId equals job.Id
+                where item.Status == status && job.UserId == userId
+                select item)
+            .CountAsync(cancellationToken);
     }
 
     public async Task AddRangeAsync(IEnumerable<MigrationItem> items, CancellationToken cancellationToken)

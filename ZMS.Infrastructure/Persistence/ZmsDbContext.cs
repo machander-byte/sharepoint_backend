@@ -33,6 +33,7 @@ public class ZmsDbContext : DbContext
         {
             builder.ToTable("Connections");
             builder.HasKey(connection => connection.Id);
+            builder.Property(connection => connection.UserId).HasMaxLength(200).IsRequired();
             builder.Property(connection => connection.Name).HasMaxLength(200).IsRequired();
             builder.Property(connection => connection.Type).HasConversion<string>().HasMaxLength(50);
             builder.Property(connection => connection.Url).HasMaxLength(500);
@@ -47,6 +48,7 @@ public class ZmsDbContext : DbContext
         {
             builder.ToTable("MigrationJobs");
             builder.HasKey(job => job.Id);
+            builder.Property(job => job.UserId).HasMaxLength(200).IsRequired();
             builder.Property(job => job.Name).HasMaxLength(200).IsRequired();
             builder.Property(job => job.SourceLocation).HasMaxLength(500).IsRequired();
             builder.Property(job => job.SourceLibraryName).HasMaxLength(200);

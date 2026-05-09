@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZMS.API.Contracts;
 using ZMS.API.Contracts.Jobs;
+using ZMS.API.Extensions;
 using ZMS.Application.Contracts;
 
 namespace ZMS.API.Controllers;
@@ -17,16 +19,20 @@ public class JobsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<IReadOnlyCollection<MigrationJobResponseDto>>> GetAll(CancellationToken cancellationToken)
     {
-        var jobs = await _migrationService.ListJobsAsync(cancellationToken);
+        var userId = User.GetUserId();
+        var jobs = await _migrationService.ListJobsAsync(userId, cancellationToken);
         return Ok(jobs.Select(job => job.ToResponse()).ToArray());
     }
 
     [HttpGet("{jobId:guid}")]
+    [Authorize]
     public async Task<ActionResult<MigrationJobResponseDto>> Get(Guid jobId, CancellationToken cancellationToken)
     {
-        var job = await _migrationService.GetJobAsync(jobId, cancellationToken);
+        var userId = User.GetUserId();
+        var job = await _migrationService.GetJobAsync(jobId, userId, cancellationToken);
         if (job is null)
         {
             return NotFound();
@@ -36,20 +42,24 @@ public class JobsController : ControllerBase
     }
 
     [HttpGet("{jobId:guid}/items")]
+    [Authorize]
     public async Task<ActionResult<IReadOnlyCollection<MigrationItemResponseDto>>> GetItems(Guid jobId, CancellationToken cancellationToken)
     {
-        var items = await _migrationService.GetJobItemsAsync(jobId, cancellationToken);
+        var userId = User.GetUserId();
+        var items = await _migrationService.GetJobItemsAsync(jobId, userId, cancellationToken);
         return Ok(items.Select(item => item.ToResponse()).ToArray());
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult<MigrationJobResponseDto>> Create(
         [FromBody] CreateMigrationJobRequestDto request,
         CancellationToken cancellationToken)
     {
         try
         {
-            var job = await _migrationService.CreateJobAsync(request.ToApplicationRequest(), cancellationToken);
+            var userId = User.GetUserId();
+            var job = await _migrationService.CreateJobAsync(request.ToApplicationRequest(), userId, cancellationToken);
             return Created($"/api/jobs/{job.Id}", job.ToResponse());
         }
         catch (InvalidOperationException exception)
@@ -63,23 +73,29 @@ public class JobsController : ControllerBase
     }
 
     [HttpPost("{jobId:guid}/start")]
+    [Authorize]
     public async Task<IActionResult> Start(Guid jobId, CancellationToken cancellationToken)
     {
-        await _migrationService.StartJobAsync(jobId, cancellationToken);
+        var userId = User.GetUserId();
+        await _migrationService.StartJobAsync(jobId, userId, cancellationToken);
         return Accepted();
     }
 
     [HttpPost("{jobId:guid}/pause")]
+    [Authorize]
     public async Task<IActionResult> Pause(Guid jobId, CancellationToken cancellationToken)
     {
-        await _migrationService.PauseJobAsync(jobId, cancellationToken);
+        var userId = User.GetUserId();
+        await _migrationService.PauseJobAsync(jobId, userId, cancellationToken);
         return Accepted();
     }
 
     [HttpPost("{jobId:guid}/resume")]
+    [Authorize]
     public async Task<IActionResult> Resume(Guid jobId, CancellationToken cancellationToken)
     {
-        await _migrationService.ResumeJobAsync(jobId, cancellationToken);
+        var userId = User.GetUserId();
+        await _migrationService.ResumeJobAsync(jobId, userId, cancellationToken);
         return Accepted();
     }
 }
