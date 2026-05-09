@@ -68,3 +68,14 @@ Cors__AllowedOrigins__0
 ```
 
 Do not put backend secrets in frontend `.env` files.
+
+## Render Deployment
+
+When deploying to Render with the `render.yaml` configuration, you **must manually set** the `ConnectionStrings__ZmsDatabase` environment variable in Render's dashboard:
+
+1. Go to your web service on Render
+2. Navigate to **Environment** settings
+3. Add or update the `ConnectionStrings__ZmsDatabase` variable with your Postgres connection string
+4. For Supabase: `Host=your-supabase-pooler-host;Port=5432;Database=postgres;Username=postgres.your-project-ref;Password=your-password;SSL Mode=Require;Trust Server Certificate=true`
+
+This variable is marked `sync: false` to prevent the password from being committed to git. The deployment will fail with a clear error if this environment variable is not configured.

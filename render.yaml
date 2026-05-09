@@ -23,6 +23,8 @@ services:
         value: https://sharepoint-sj6m.onrender.com
       - key: Cors__AllowedOrigins__1
         value: https://zms-web.onrender.com
+      - key: Cors__AllowedOrigins__2
+        value: https://sharepoint-22yokh7jr-badugujashwanth-4113s-projects.vercel.app
       - key: MigrationEngine__LargeFileUploadThresholdBytes
         value: "10485760"
       - key: MigrationEngine__UploadChunkSizeBytes

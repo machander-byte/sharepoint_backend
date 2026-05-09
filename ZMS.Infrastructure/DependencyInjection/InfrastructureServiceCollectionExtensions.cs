@@ -12,9 +12,43 @@ public static class InfrastructureServiceCollectionExtensions
 {
     public static IServiceCollection AddZmsInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var databaseProvider = configuration["Database:Provider"];
-        var connectionString = configuration.GetConnectionString("ZmsDatabase")
-            ?? "Server=(localdb)\\MSSQLLocalDB;Database=ZMS;Trusted_Connection=True;TrustServerCertificate=True;";
+        var databaseProvider = configuration["Database:Provider"] ?? "SqlServer";
+        var connectionString = configuration.GetConnectionString("ZmsDatabase");
+
+        // Validate that connection string is provided for non-Sqlite providers
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                // Default to in-memory SQLite for development
+                connectionString = "Data Source=:memory:";
+            }
+            else if (string.Equals(databaseProvider, "Postgres", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(databaseProvider, "PostgreSql", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(databaseProvider, "Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Postgres database provider requires 'ConnectionStrings:ZmsDatabase' to be configured. " +
+                    "Please set the environment variable 'ConnectionStrings__ZmsDatabase' with a valid Postgres connection string.");
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    "SQL Server database provider requires 'ConnectionStrings:ZmsDatabase' to be configured. " +
+                    "Please set the environment variable 'ConnectionStrings__ZmsDatabase' with a valid SQL Server connection string.");
+            }
+        }
+
+        var looksLikePostgresConnection = connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase)
+            || connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase) && connectionString.Contains("Username=", StringComparison.OrdinalIgnoreCase);
+        if (looksLikePostgresConnection
+            && !IsPostgresProvider(databaseProvider)
+            && !string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "ConnectionStrings:ZmsDatabase looks like a Postgres connection string, but Database:Provider is not Postgres. " +
+                "Set the environment variable 'Database__Provider' to 'Postgres'.");
+        }
 
         services.AddDbContext<ZmsDbContext>(options =>
         {
@@ -25,9 +59,7 @@ public static class InfrastructureServiceCollectionExtensions
                 return;
             }
 
-            if (string.Equals(databaseProvider, "Postgres", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(databaseProvider, "PostgreSql", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(databaseProvider, "Npgsql", StringComparison.OrdinalIgnoreCase))
+            if (IsPostgresProvider(databaseProvider))
             {
                 options.UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.EnableRetryOnFailure());
                 return;
@@ -42,6 +74,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ILogRepository, LogRepository>();
 
         return services;
+    }
+
+    private static bool IsPostgresProvider(string databaseProvider)
+    {
+        return string.Equals(databaseProvider, "Postgres", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(databaseProvider, "PostgreSql", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(databaseProvider, "Npgsql", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void EnsureSqliteDatabaseDirectory(string connectionString)
