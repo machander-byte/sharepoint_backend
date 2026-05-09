@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>ZMS.API</RootNamespace>
+    <UserSecretsId>2195661e-0858-417b-99a2-0d1f3cb2f042</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZMS.Application\ZMS.Application.csproj" />
+    <ProjectReference Include="..\ZMS.Connectors.FileShare\ZMS.Connectors.FileShare.csproj" />
+    <ProjectReference Include="..\ZMS.Connectors.GoogleDrive\ZMS.Connectors.GoogleDrive.csproj" />
+    <ProjectReference Include="..\ZMS.Connectors.SharePointOnPrem\ZMS.Connectors.SharePointOnPrem.csproj" />
+    <ProjectReference Include="..\ZMS.Connectors.SharePointOnline\ZMS.Connectors.SharePointOnline.csproj" />
+    <ProjectReference Include="..\ZMS.Core\ZMS.Core.csproj" />
+    <ProjectReference Include="..\ZMS.Infrastructure\ZMS.Infrastructure.csproj" />
+    <ProjectReference Include="..\ZMS.MigrationEngine\ZMS.MigrationEngine.csproj" />
+    <ProjectReference Include="..\ZMS.Reporting\ZMS.Reporting.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+</Project>

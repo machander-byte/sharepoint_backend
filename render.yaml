@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: zms-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    dockerContext: .
+    healthCheckPath: /api/health
+    plan: free
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Database__Provider
+        value: Postgres
+      - key: ConnectionStrings__ZmsDatabase
+        sync: false
+      - key: DataProtection__KeyRingPath
+        value: /tmp/dataprotection-keys
+      - key: Supabase__Auth__Authority
+        value: https://hxptmbphcdyzhmwnimwh.supabase.co/auth/v1
+      - key: Supabase__Auth__Audience
+        value: authenticated
+      - key: Cors__AllowedOrigins__0
+        value: https://sharepoint-sj6m.onrender.com
+      - key: Cors__AllowedOrigins__1
+        value: https://zms-web.onrender.com
+      - key: MigrationEngine__LargeFileUploadThresholdBytes
+        value: "10485760"
+      - key: MigrationEngine__UploadChunkSizeBytes
+        value: "6553600"
+      - key: MigrationEngine__RetryBaseDelayMilliseconds
+        value: "1000"
+      - key: MigrationEngine__RetryMaxDelayMilliseconds
+        value: "30000"
+      - key: MigrationEngine__ResumeQueuedJobsOnStartup
+        value: "true"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false

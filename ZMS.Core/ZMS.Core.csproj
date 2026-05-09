@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZMS.Core</RootNamespace>
+  </PropertyGroup>
+</Project>

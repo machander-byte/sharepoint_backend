@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ZMS.MigrationEngine</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZMS.Core\ZMS.Core.csproj" />
+    <ProjectReference Include="..\ZMS.Application\ZMS.Application.csproj" />
+  </ItemGroup>
+</Project>
