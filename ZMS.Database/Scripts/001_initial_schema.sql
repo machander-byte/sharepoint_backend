@@ -3,6 +3,7 @@ BEGIN
     CREATE TABLE dbo.Connections
     (
         Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+        UserId NVARCHAR(200) NOT NULL CONSTRAINT DF_Connections_UserId DEFAULT N'',
         Name NVARCHAR(200) NOT NULL,
         Type NVARCHAR(50) NOT NULL,
         Url NVARCHAR(500) NOT NULL,
@@ -25,6 +26,7 @@ BEGIN
     CREATE TABLE dbo.MigrationJobs
     (
         Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+        UserId NVARCHAR(200) NOT NULL CONSTRAINT DF_MigrationJobs_UserId DEFAULT N'',
         Name NVARCHAR(200) NOT NULL,
         SourceConnectionId UNIQUEIDENTIFIER NOT NULL,
         TargetConnectionId UNIQUEIDENTIFIER NOT NULL,
@@ -32,6 +34,8 @@ BEGIN
         SourceLibraryName NVARCHAR(200) NULL,
         TargetSiteUrl NVARCHAR(500) NOT NULL,
         TargetLibraryName NVARCHAR(200) NOT NULL,
+        TargetLibraryUrlSegment NVARCHAR(200) NULL,
+        TargetRootPath NVARCHAR(500) NULL,
         PreserveMetadata BIT NOT NULL CONSTRAINT DF_MigrationJobs_PreserveMetadata DEFAULT 1,
         BatchSize INT NOT NULL CONSTRAINT DF_MigrationJobs_BatchSize DEFAULT 20,
         MaxRetryCount INT NOT NULL CONSTRAINT DF_MigrationJobs_MaxRetryCount DEFAULT 3,
@@ -86,6 +90,12 @@ BEGIN
         CONSTRAINT FK_Logs_MigrationJobs FOREIGN KEY (JobId) REFERENCES dbo.MigrationJobs(Id),
         CONSTRAINT FK_Logs_MigrationItems FOREIGN KEY (ItemId) REFERENCES dbo.MigrationItems(Id)
     );
+END;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Connections_UserId_IsEnabled' AND object_id = OBJECT_ID(N'dbo.Connections'))
+BEGIN
+    CREATE INDEX IX_Connections_UserId_IsEnabled ON dbo.Connections(UserId, IsEnabled);
 END;
 GO
 

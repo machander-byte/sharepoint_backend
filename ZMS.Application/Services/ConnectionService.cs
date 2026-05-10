@@ -28,6 +28,9 @@ public class ConnectionService : IConnectionService
     public Task<IReadOnlyCollection<ConnectionProfile>> ListAsync(string userId, CancellationToken cancellationToken)
         => _connectionRepository.ListAsync(userId, cancellationToken);
 
+    public Task<bool> DeleteAsync(Guid connectionId, string userId, CancellationToken cancellationToken)
+        => _connectionRepository.DeleteAsync(connectionId, userId, cancellationToken);
+
     public async Task<ConnectionProfile> CreateAsync(CreateConnectionRequest request, string userId, CancellationToken cancellationToken)
     {
         ValidateRequest(request);

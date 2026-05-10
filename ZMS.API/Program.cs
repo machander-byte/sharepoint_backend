@@ -222,6 +222,8 @@ static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
         "ALTER TABLE \"MigrationJobs\" ADD COLUMN IF NOT EXISTS \"TargetRootPath\" character varying(500) NULL;");
 
     await dbContext.Database.ExecuteSqlRawAsync(
+        "CREATE INDEX IF NOT EXISTS \"IX_Connections_UserId_IsEnabled\" ON \"Connections\"(\"UserId\", \"IsEnabled\");");
+    await dbContext.Database.ExecuteSqlRawAsync(
         "CREATE INDEX IF NOT EXISTS \"IX_MigrationJobs_Status\" ON \"MigrationJobs\"(\"Status\");");
     await dbContext.Database.ExecuteSqlRawAsync(
         "CREATE INDEX IF NOT EXISTS \"IX_MigrationJobs_CreatedUtc\" ON \"MigrationJobs\"(\"CreatedUtc\" DESC);");

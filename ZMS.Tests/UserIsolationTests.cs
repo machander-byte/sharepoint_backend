@@ -1,77 +1,148 @@
-using Moq;
-using Xunit;
-using ZMS.Core.Interfaces;
-using ZMS.Core.Models;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using ZMS.Core.Enums;
+using ZMS.Core.Models;
+using ZMS.Infrastructure.Persistence;
+using ZMS.Infrastructure.Repositories;
 
 namespace ZMS.Tests;
 
 public class UserIsolationTests
 {
     [Fact]
-    public async Task ConnectionRepository_ListAsync_FiltersByUserId()
+    public async Task ConnectionRepository_ListAsync_ReturnsOnlyEnabledConnectionsForRequestedUser()
     {
-        // Arrange
-        var mockRepository = new Mock<IConnectionRepository>();
+        await using var database = await CreateOpenDatabaseAsync();
+        await using var context = CreateContext(database);
+        await context.Database.EnsureCreatedAsync();
+
         var userId = "user123";
         var otherUserId = "user456";
-        var userConnections = new List<ConnectionProfile>
+        var visibleConnection = new ConnectionProfile
         {
-            new ConnectionProfile { Id = Guid.NewGuid(), Name = "User Connection", UserId = userId },
-            new ConnectionProfile { Id = Guid.NewGuid(), Name = "Another User Connection", UserId = userId }
-        };
-        var otherUserConnections = new List<ConnectionProfile>
-        {
-            new ConnectionProfile { Id = Guid.NewGuid(), Name = "Other User Connection", UserId = otherUserId }
+            Name = "User Connection",
+            UserId = userId,
+            Type = ConnectionType.GoogleDrive,
+            Url = "https://drive.google.com/drive/folders/source-folder"
         };
 
-        mockRepository
-            .Setup(repo => repo.ListAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(userConnections);
+        context.Connections.AddRange(
+            visibleConnection,
+            new ConnectionProfile
+            {
+                Name = "Other User Connection",
+                UserId = otherUserId,
+                Type = ConnectionType.GoogleDrive,
+                Url = "https://drive.google.com/drive/folders/other-folder"
+            },
+            new ConnectionProfile
+            {
+                Name = "Deleted User Connection",
+                UserId = userId,
+                Type = ConnectionType.GoogleDrive,
+                Url = "https://drive.google.com/drive/folders/deleted-folder",
+                IsEnabled = false
+            });
+        await context.SaveChangesAsync();
 
-        mockRepository
-            .Setup(repo => repo.ListAsync(otherUserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(otherUserConnections);
+        var repository = new ConnectionRepository(context);
 
-        // Act
-        var userResult = await mockRepository.Object.ListAsync(userId, CancellationToken.None);
-        var otherUserResult = await mockRepository.Object.ListAsync(otherUserId, CancellationToken.None);
+        var result = await repository.ListAsync(userId, CancellationToken.None);
 
-        // Assert
-        Assert.Equal(2, userResult.Count);
-        Assert.All(userResult, c => Assert.Equal(userId, c.UserId));
-        
-        Assert.Single(otherUserResult);
-        Assert.All(otherUserResult, c => Assert.Equal(otherUserId, c.UserId));
+        var connection = Assert.Single(result);
+        Assert.Equal(visibleConnection.Id, connection.Id);
+        Assert.Equal(userId, connection.UserId);
+        Assert.True(connection.IsEnabled);
     }
 
     [Fact]
-    public async Task ConnectionRepository_GetByIdAsync_FiltersByUserId()
+    public async Task ConnectionRepository_GetByIdAsync_RequiresOwnerAndEnabledConnection()
     {
-        // Arrange
-        var mockRepository = new Mock<IConnectionRepository>();
+        await using var database = await CreateOpenDatabaseAsync();
+        await using var context = CreateContext(database);
+        await context.Database.EnsureCreatedAsync();
+
         var userId = "user123";
         var otherUserId = "user456";
-        var connectionId = Guid.NewGuid();
-        var userConnection = new ConnectionProfile { Id = connectionId, Name = "User Connection", UserId = userId };
+        var connection = new ConnectionProfile
+        {
+            Name = "User Connection",
+            UserId = userId,
+            Type = ConnectionType.GoogleDrive,
+            Url = "https://drive.google.com/drive/folders/source-folder"
+        };
+        var disabledConnection = new ConnectionProfile
+        {
+            Name = "Deleted User Connection",
+            UserId = userId,
+            Type = ConnectionType.GoogleDrive,
+            Url = "https://drive.google.com/drive/folders/deleted-folder",
+            IsEnabled = false
+        };
 
-        mockRepository
-            .Setup(repo => repo.GetByIdAsync(connectionId, userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(userConnection);
+        context.Connections.AddRange(connection, disabledConnection);
+        await context.SaveChangesAsync();
 
-        mockRepository
-            .Setup(repo => repo.GetByIdAsync(connectionId, otherUserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ConnectionProfile?)null);
+        var repository = new ConnectionRepository(context);
 
-        // Act
-        var userResult = await mockRepository.Object.GetByIdAsync(connectionId, userId, CancellationToken.None);
-        var otherUserResult = await mockRepository.Object.GetByIdAsync(connectionId, otherUserId, CancellationToken.None);
+        var ownerResult = await repository.GetByIdAsync(connection.Id, userId, CancellationToken.None);
+        var otherUserResult = await repository.GetByIdAsync(connection.Id, otherUserId, CancellationToken.None);
+        var disabledResult = await repository.GetByIdAsync(disabledConnection.Id, userId, CancellationToken.None);
 
-        // Assert
-        Assert.NotNull(userResult);
-        Assert.Equal(userId, userResult!.UserId);
-        Assert.Equal(connectionId, userResult.Id);
-
+        Assert.NotNull(ownerResult);
+        Assert.Equal(userId, ownerResult!.UserId);
         Assert.Null(otherUserResult);
+        Assert.Null(disabledResult);
+    }
+
+    [Fact]
+    public async Task ConnectionRepository_DeleteAsync_DisablesOnlyOwnedConnection()
+    {
+        await using var database = await CreateOpenDatabaseAsync();
+        await using var context = CreateContext(database);
+        await context.Database.EnsureCreatedAsync();
+
+        var userId = "user123";
+        var otherUserId = "user456";
+        var connection = new ConnectionProfile
+        {
+            Name = "User Connection",
+            UserId = userId,
+            Type = ConnectionType.GoogleDrive,
+            Url = "https://drive.google.com/drive/folders/source-folder"
+        };
+
+        context.Connections.Add(connection);
+        await context.SaveChangesAsync();
+
+        var repository = new ConnectionRepository(context);
+
+        Assert.False(await repository.DeleteAsync(connection.Id, otherUserId, CancellationToken.None));
+        Assert.True((await context.Connections.FindAsync(new object?[] { connection.Id }, CancellationToken.None))!.IsEnabled);
+
+        Assert.True(await repository.DeleteAsync(connection.Id, userId, CancellationToken.None));
+
+        var listedConnections = await repository.ListAsync(userId, CancellationToken.None);
+        var storedConnection = await context.Connections.FindAsync(new object?[] { connection.Id }, CancellationToken.None);
+
+        Assert.Empty(listedConnections);
+        Assert.NotNull(storedConnection);
+        Assert.False(storedConnection!.IsEnabled);
+    }
+
+    private static async Task<SqliteConnection> CreateOpenDatabaseAsync()
+    {
+        var database = new SqliteConnection("Data Source=:memory:");
+        await database.OpenAsync();
+        return database;
+    }
+
+    private static ZmsDbContext CreateContext(SqliteConnection database)
+    {
+        var options = new DbContextOptionsBuilder<ZmsDbContext>()
+            .UseSqlite(database)
+            .Options;
+
+        return new ZmsDbContext(options);
     }
 }
