@@ -53,4 +53,13 @@ public class ConnectionsController : ControllerBase
         var result = await _connectionService.TestConnectionAsync(connectionId, userId, cancellationToken);
         return Ok(result.ToResponse());
     }
+
+    [HttpDelete("{connectionId:guid}")]
+    [Authorize]
+    public async Task<IActionResult> Delete(Guid connectionId, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var deleted = await _connectionService.DeleteAsync(connectionId, userId, cancellationToken);
+        return deleted ? NoContent() : NotFound();
+    }
 }

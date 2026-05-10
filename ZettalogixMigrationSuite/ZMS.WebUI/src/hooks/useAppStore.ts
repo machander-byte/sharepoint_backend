@@ -26,7 +26,9 @@ export interface AppState {
   pauseJob: (id: string) => Promise<void>;
   createConnection: (input: CreateConnectionInput) => Promise<void>;
   testConnection: (id: string) => Promise<void>;
+  deleteConnection: (id: string) => Promise<void>;
   saveSettings: (input: AppSettings) => Promise<void>;
+  resetSessionData: () => void;
   dismissNotification: (id: string) => void;
 }
 
@@ -274,6 +276,39 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
   },
 
+  deleteConnection: async (id) => {
+    const connection = get().connections.find((item) => item.id === id);
+    set((state) => ({ loading: { ...state.loading, connectionsMutation: true } }));
+
+    try {
+      await api.deleteConnection(id);
+      set((state) => ({
+        connections: state.connections.filter((item) => item.id !== id),
+        notifications: [
+          notification(
+            "success",
+            "Connection deleted",
+            connection ? `${connection.name} was removed from your workspace.` : "The connection was removed."
+          ),
+          ...state.notifications
+        ]
+      }));
+    } catch (error) {
+      set((state) => ({
+        notifications: [
+          notification(
+            "error",
+            "Connection delete failed",
+            error instanceof Error ? error.message : "The selected connection could not be deleted."
+          ),
+          ...state.notifications
+        ]
+      }));
+    } finally {
+      set((state) => ({ loading: { ...state.loading, connectionsMutation: false } }));
+    }
+  },
+
   saveSettings: async (input) => {
     set((state) => ({ loading: { ...state.loading, settings: true } }));
 
@@ -294,5 +329,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   dismissNotification: (id) =>
     set((state) => ({
       notifications: state.notifications.filter((message) => message.id !== id)
-    }))
+    })),
+
+  resetSessionData: () => {
+    api.clearSessionCache();
+    set({
+      jobs: [],
+      connections: [],
+      settings: null,
+      notifications: [],
+      loading: defaultLoading
+    });
+  }
 }));

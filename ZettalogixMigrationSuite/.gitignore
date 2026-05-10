@@ -18,3 +18,5 @@ data-protection-keys/
 ZMS.WebUI/.env
 ZMS.WebUI/vite.config.js
 ZMS.WebUI/vite.config.d.ts
+
+.vercel

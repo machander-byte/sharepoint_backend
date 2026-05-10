@@ -11,7 +11,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        sync: false
+        value: https://sharepoint-backend-g5vc.onrender.com
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
       - key: VITE_GOOGLE_API_KEY

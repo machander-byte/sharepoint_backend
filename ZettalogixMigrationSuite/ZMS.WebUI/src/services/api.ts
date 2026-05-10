@@ -342,8 +342,14 @@ async function getJobReport(jobId: string): Promise<ApiJobReportResponse | null>
   }
 }
 
-function loadSettings(): AppSettings {
-  const stored = window.localStorage.getItem(settingsStorageKey);
+async function getSettingsStorageKey(): Promise<string> {
+  const { data } = await createClient().auth.getSession();
+  const userId = data.session?.user.id;
+  return userId ? `${settingsStorageKey}:${userId}` : settingsStorageKey;
+}
+
+async function loadSettings(): Promise<AppSettings> {
+  const stored = window.localStorage.getItem(await getSettingsStorageKey());
   if (!stored) {
     return defaultSettings;
   }
@@ -355,8 +361,8 @@ function loadSettings(): AppSettings {
   }
 }
 
-function saveSettingsToStorage(settings: AppSettings): void {
-  window.localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
+async function saveSettingsToStorage(settings: AppSettings): Promise<void> {
+  window.localStorage.setItem(await getSettingsStorageKey(), JSON.stringify(settings));
 }
 
 export const api = {
@@ -490,12 +496,17 @@ export const api = {
     return mappedResult;
   },
 
+  async deleteConnection(id: string): Promise<void> {
+    await request<void>(`/connections/${id}`, { method: "DELETE" });
+    connectionHealth.delete(id);
+  },
+
   async getSettings(): Promise<AppSettings> {
     return loadSettings();
   },
 
   async saveSettings(input: AppSettings): Promise<AppSettings> {
-    saveSettingsToStorage(input);
+    await saveSettingsToStorage(input);
     return input;
   },
 
@@ -505,5 +516,9 @@ export const api = {
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "Report download failed.");
     }
+  },
+
+  clearSessionCache(): void {
+    connectionHealth.clear();
   }
 };

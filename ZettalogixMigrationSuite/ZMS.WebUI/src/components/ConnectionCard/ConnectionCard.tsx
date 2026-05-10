@@ -6,9 +6,10 @@ import styles from "./ConnectionCard.module.css";
 interface ConnectionCardProps {
   connection: ConnectionRecord;
   onTest: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export default function ConnectionCard({ connection, onTest }: ConnectionCardProps): JSX.Element {
+export default function ConnectionCard({ connection, onTest, onDelete }: ConnectionCardProps): JSX.Element {
   const testLabel =
     connection.type === "GoogleDrive"
       ? "Test Google Drive Source"
@@ -68,10 +69,16 @@ export default function ConnectionCard({ connection, onTest }: ConnectionCardPro
         </div>
       ) : null}
 
-      <button type="button" className="ghost-button" onClick={() => onTest(connection.id)}>
-        <span className="material-symbols-outlined">bolt</span>
-        {testLabel}
-      </button>
+      <div className={styles.actions}>
+        <button type="button" className="ghost-button" onClick={() => onTest(connection.id)}>
+          <span className="material-symbols-outlined">bolt</span>
+          {testLabel}
+        </button>
+        <button type="button" className={styles.deleteButton} onClick={() => onDelete(connection.id)}>
+          <span className="material-symbols-outlined">delete</span>
+          Delete
+        </button>
+      </div>
     </article>
   );
 }

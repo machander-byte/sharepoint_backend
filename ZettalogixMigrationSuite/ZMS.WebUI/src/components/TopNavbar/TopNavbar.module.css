@@ -142,15 +142,26 @@
   place-items: center;
 }
 
-.profile {
+.profile,
+.signOutButton {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 10px 8px 8px;
   border: none;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.86);
+}
+
+.profile {
+  padding: 8px 10px 8px 8px;
   text-align: left;
+}
+
+.signOutButton {
+  min-height: 48px;
+  padding: 0 14px;
+  color: var(--danger);
+  font-weight: 800;
 }
 
 .avatar {

@@ -9,4 +9,5 @@ public interface IConnectionRepository
     Task<ConnectionProfile?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task AddAsync(ConnectionProfile connection, CancellationToken cancellationToken);
     Task UpdateAsync(ConnectionProfile connection, CancellationToken cancellationToken);
+    Task<bool> DeleteAsync(Guid id, string userId, CancellationToken cancellationToken);
 }

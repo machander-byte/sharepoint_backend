@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import ConnectionCard from "../components/ConnectionCard/ConnectionCard";
+import ConfirmDialog from "../components/ConfirmDialog/ConfirmDialog";
 import EmptyState from "../components/EmptyState/EmptyState";
 import GoogleDriveFolderPicker, { GoogleDriveFolderSelection } from "../components/google/GoogleDriveFolderPicker";
 import { useAppStore } from "../hooks/useAppStore";
@@ -106,9 +107,11 @@ export default function ConnectionsPage(): JSX.Element {
   const connections = useAppStore((state) => state.connections);
   const createConnection = useAppStore((state) => state.createConnection);
   const testConnection = useAppStore((state) => state.testConnection);
+  const deleteConnection = useAppStore((state) => state.deleteConnection);
   const loading = useAppStore((state) => state.loading.connectionsMutation);
   const [form, setForm] = useState<CreateConnectionInput>(initialForm);
   const [formMessage, setFormMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -170,8 +173,13 @@ export default function ConnectionsPage(): JSX.Element {
         return "Register a reusable migration endpoint.";
     }
   }, [form.type]);
+  const deleteTargetName = useMemo(
+    () => connections.find((connection) => connection.id === deleteTarget)?.name ?? "",
+    [connections, deleteTarget]
+  );
 
   return (
+    <>
     <div className="page-stack">
       <section className="split-panel">
         <article className="surface-card">
@@ -338,10 +346,29 @@ export default function ConnectionsPage(): JSX.Element {
       ) : (
         <section className="card-grid">
           {connections.map((connection) => (
-            <ConnectionCard key={connection.id} connection={connection} onTest={(id) => void testConnection(id)} />
+            <ConnectionCard
+              key={connection.id}
+              connection={connection}
+              onTest={(id) => void testConnection(id)}
+              onDelete={setDeleteTarget}
+            />
           ))}
         </section>
       )}
     </div>
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        title="Delete connection?"
+        description={`Remove "${deleteTargetName}" from your workspace. Existing job history remains available, but new migrations cannot use this connection.`}
+        confirmLabel="Delete connection"
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) {
+            void deleteConnection(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+      />
+    </>
   );
 }

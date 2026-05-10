@@ -86,3 +86,27 @@
   color: var(--text-muted);
   line-height: 1.6;
 }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions button {
+  flex: 1 1 180px;
+}
+
+.deleteButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 16px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 700;
+}

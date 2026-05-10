@@ -62,6 +62,7 @@ export default function TopNavbar(): JSX.Element {
   const { user, signOut } = useAuth();
   const jobs = useAppStore((state) => state.jobs);
   const connections = useAppStore((state) => state.connections);
+  const resetSessionData = useAppStore((state) => state.resetSessionData);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -157,6 +158,12 @@ export default function TopNavbar(): JSX.Element {
     }
   };
 
+  const handleSignOut = async () => {
+    resetSessionData();
+    await signOut();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <header className={`${styles.navbar} glass-card`}>
       <div className={styles.titleBlock}>
@@ -214,17 +221,17 @@ export default function TopNavbar(): JSX.Element {
           <span className="material-symbols-outlined">notifications</span>
         </button>
 
-        <button
-          type="button"
-          className={styles.profile}
-          title="Sign out"
-          onClick={() => void signOut().then(() => navigate("/login", { replace: true }))}
-        >
+        <div className={styles.profile}>
           <div className={styles.avatar}>{initials}</div>
           <div>
             <strong>{displayName}</strong>
             <span>{userEmail}</span>
           </div>
+        </div>
+
+        <button type="button" className={styles.signOutButton} onClick={() => void handleSignOut()}>
+          <span className="material-symbols-outlined">logout</span>
+          Logout
         </button>
       </div>
     </header>

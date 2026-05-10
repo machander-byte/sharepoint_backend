@@ -18,7 +18,7 @@ public class ConnectionRepository : IConnectionRepository
     {
         return await _dbContext.Connections
             .AsNoTracking()
-            .Where(connection => connection.UserId == userId)
+            .Where(connection => connection.UserId == userId && connection.IsEnabled)
             .OrderBy(connection => connection.Name)
             .ToListAsync(cancellationToken);
     }
@@ -27,14 +27,14 @@ public class ConnectionRepository : IConnectionRepository
     {
         return _dbContext.Connections
             .AsNoTracking()
-            .FirstOrDefaultAsync(connection => connection.Id == id && connection.UserId == userId, cancellationToken);
+            .FirstOrDefaultAsync(connection => connection.Id == id && connection.UserId == userId && connection.IsEnabled, cancellationToken);
     }
 
     public Task<ConnectionProfile?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return _dbContext.Connections
             .AsNoTracking()
-            .FirstOrDefaultAsync(connection => connection.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(connection => connection.Id == id && connection.IsEnabled, cancellationToken);
     }
 
     public async Task AddAsync(ConnectionProfile connection, CancellationToken cancellationToken)
@@ -47,5 +47,21 @@ public class ConnectionRepository : IConnectionRepository
     {
         _dbContext.Connections.Update(connection);
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> DeleteAsync(Guid id, string userId, CancellationToken cancellationToken)
+    {
+        var connection = await _dbContext.Connections
+            .FirstOrDefaultAsync(connection => connection.Id == id && connection.UserId == userId && connection.IsEnabled, cancellationToken);
+
+        if (connection is null)
+        {
+            return false;
+        }
+
+        connection.IsEnabled = false;
+        connection.UpdatedUtc = DateTimeOffset.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }
