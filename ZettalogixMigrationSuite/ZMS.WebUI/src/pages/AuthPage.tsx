@@ -15,6 +15,9 @@ const providerLabels: Array<{ provider: Provider; icon: string; label: string }>
   { provider: "google", icon: "account_circle", label: "Continue with Google" }
 ];
 
+const buildCommit = import.meta.env.VITE_APP_COMMIT?.trim() || "local";
+const buildTime = import.meta.env.VITE_APP_BUILD_TIME?.trim() || "local";
+
 export default function AuthPage(): JSX.Element {
   const location = useLocation();
   const { loading, session, signInWithOAuth, signInWithEmail } = useAuth();
@@ -110,6 +113,10 @@ export default function AuthPage(): JSX.Element {
           <strong>Known gap</strong>
           <span>File migration integrity passed. Empty-folder preservation is a known gap.</span>
         </div>
+
+        <p className={styles.buildFingerprint} aria-label="ZMS frontend deployment fingerprint">
+          ZMS frontend build {buildCommit} · {buildTime}
+        </p>
       </section>
 
       <section className={styles.authPanel}>
