@@ -52,12 +52,16 @@ public class HealthController : ControllerBase
     public IActionResult Version()
     {
         var assembly = typeof(Program).Assembly.GetName();
+        var deployment = GetDeploymentFingerprint();
+
         return Ok(new
         {
+            AppName = "ZMS",
             Service = "ZMS.API",
             Version = assembly.Version?.ToString() ?? "unknown",
             Environment = _environment.EnvironmentName,
-            Commit = _configuration["Build:Commit"] ?? _configuration["RENDER_GIT_COMMIT"] ?? "unknown",
+            deployment.Commit,
+            deployment.BuildTime,
             StartedUtc,
             UtcNow = DateTimeOffset.UtcNow
         });
@@ -82,13 +86,29 @@ public class HealthController : ControllerBase
 
         return StatusCode(healthy ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable, new
         {
+            AppName = "ZMS",
             Status = status,
             UtcNow = DateTimeOffset.UtcNow,
             StartedUtc,
             UptimeSeconds = (long)(DateTimeOffset.UtcNow - StartedUtc).TotalSeconds,
+            Deployment = GetDeploymentFingerprint(),
             Database = database,
             Queue = queue
         });
+    }
+
+    private DeploymentFingerprint GetDeploymentFingerprint()
+    {
+        var commit = _configuration["ZMS_BUILD_COMMIT"]
+            ?? _configuration["Build:Commit"]
+            ?? _configuration["RENDER_GIT_COMMIT"]
+            ?? "unknown";
+        var buildTime = _configuration["ZMS_BUILD_TIME"]
+            ?? _configuration["Build:Time"]
+            ?? _configuration["RENDER_DEPLOY_ID"]
+            ?? "unknown";
+
+        return new DeploymentFingerprint("ZMS", "ZMS.API", _environment.EnvironmentName, commit, buildTime);
     }
 
     private async Task<DependencyStatus> GetDatabaseStatusAsync(CancellationToken cancellationToken)
@@ -105,4 +125,5 @@ public class HealthController : ControllerBase
     }
 
     private sealed record DependencyStatus(bool Healthy, string Provider, string Message);
+    private sealed record DeploymentFingerprint(string AppName, string Service, string Environment, string Commit, string BuildTime);
 }
