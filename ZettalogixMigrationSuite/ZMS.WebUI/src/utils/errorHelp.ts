@@ -27,12 +27,12 @@ const errorRules: ErrorRule[] = [
     }
   },
   {
-    matches: ["saved connection secret could not be decrypted", "dataprotection:keyringpath", "key ring was lost"],
+    matches: ["saved connection secret could not be decrypted", "dataprotection:keyringpath", "dataprotection:keystorage", "key ring was lost"],
     guidance: {
       title: "Saved connection secret cannot be decrypted",
       summary: "The API is running with a different or missing ASP.NET Core Data Protection key ring.",
       checks: [
-        "Configure DataProtection__KeyRingPath to a persistent folder shared by every API/worker instance.",
+        "Configure DataProtection__KeyStorage=Database, or use DataProtection__KeyRingPath with a persistent shared folder.",
         "Restore the original key ring if it was moved or deleted.",
         "If the key ring is permanently lost, recreate the affected saved connection."
       ]

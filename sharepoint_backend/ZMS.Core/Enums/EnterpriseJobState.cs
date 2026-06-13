@@ -1,0 +1,28 @@
+namespace ZMS.Core.Enums;
+
+public enum EnterpriseJobState
+{
+    CREATED = 1,
+    DISCOVERY_PENDING = 2,
+    DISCOVERING = 3,
+    DISCOVERED = 4,
+    ANALYSIS_PENDING = 5,
+    ANALYZING = 6,
+    READY_FOR_REVIEW = 7,
+    APPROVED = 8,
+    QUEUED = 9,
+    MIGRATING = 10,
+    THROTTLED = 11,
+    RETRYING = 12,
+    PAUSED = 13,
+    PARTIALLY_FAILED = 14,
+    DELTA_SYNC_PENDING = 15,
+    DELTA_SYNCING = 16,
+    VALIDATING = 17,
+    COMPLETED = 18,
+    FAILED_DISCOVERY = 19,
+    FAILED_ANALYSIS = 20,
+    FAILED_MIGRATION = 21,
+    FAILED_VALIDATION = 22,
+    CANCELLED = 23
+}

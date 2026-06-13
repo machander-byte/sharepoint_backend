@@ -11,6 +11,8 @@ public static class ApiMappings
 {
     private const string GoogleRefreshTokenKey = "RefreshToken";
     private const string SharePointDocumentLibraryNameKey = "DocumentLibraryName";
+    private const string ConnectionKindKey = "ConnectionKind";
+    private const string AuthenticationTypeKey = "AuthenticationType";
 
     public static CreateConnectionRequest ToApplicationRequest(this CreateConnectionRequestDto dto)
     {
@@ -60,6 +62,12 @@ public static class ApiMappings
             DocumentLibraryName = connection.AdditionalSettings.TryGetValue(SharePointDocumentLibraryNameKey, out var documentLibraryName)
                 ? documentLibraryName
                 : null,
+            ConnectionKind = connection.AdditionalSettings.TryGetValue(ConnectionKindKey, out var connectionKind)
+                ? connectionKind
+                : null,
+            AuthenticationType = connection.AdditionalSettings.TryGetValue(AuthenticationTypeKey, out var authenticationType)
+                ? authenticationType
+                : null,
             HasClientSecret = connection.Type != ConnectionType.GoogleDrive
                 && !string.IsNullOrWhiteSpace(connection.ClientSecret),
             HasRefreshToken = connection.Type != ConnectionType.GoogleDrive
@@ -99,10 +107,14 @@ public static class ApiMappings
             BatchSize = job.BatchSize,
             MaxRetryCount = job.MaxRetryCount,
             Status = job.Status,
+            EnterpriseState = job.EnterpriseState,
             TotalItems = job.TotalItems,
             CompletedItems = job.CompletedItems,
             FailedItems = job.FailedItems,
             LastError = job.LastError,
+            FailureReason = job.FailureReason,
+            RetryCount = job.RetryCount,
+            CorrelationId = job.CorrelationId,
             CreatedUtc = job.CreatedUtc,
             StartedUtc = job.StartedUtc,
             FinishedUtc = job.FinishedUtc,

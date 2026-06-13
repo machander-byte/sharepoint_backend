@@ -1,6 +1,6 @@
-# Zettalogix Migration Suite Frontend
+# zettalogixmigrationsuite Frontend
 
-This repository contains the frontend web UI for Zettalogix Migration Suite.
+This repository contains the frontend web UI for zettalogixmigrationsuite.
 
 The backend API and migration worker were split into:
 

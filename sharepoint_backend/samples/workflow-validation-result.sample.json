@@ -1,0 +1,36 @@
+{
+  "workflowRunId": "sample-workflow-validation-001",
+  "startedAt": "2026-06-01T00:00:00Z",
+  "completedAt": "2026-06-01T00:02:00Z",
+  "status": "completed",
+  "overallResult": "pass_with_warnings",
+  "source": "latest_scan",
+  "createdBy": "Migration Lead",
+  "summary": {
+    "scanId": "sample-scan-001",
+    "assessmentId": "sample-assessment-001",
+    "planId": "sample-plan-001",
+    "validationId": "sample-validation-001",
+    "simulationId": "sample-simulation-001",
+    "executionJobId": "sample-execution-job-001",
+    "previewId": "sample-preview-001"
+  },
+  "steps": [
+    { "stepId": "step-01", "order": 1, "name": "Discovery Scan", "status": "passed", "durationMs": 100, "relatedArtifactId": "sample-scan-001", "warnings": [], "errors": [], "notes": [] },
+    { "stepId": "step-06", "order": 6, "name": "Pre-Migration Validation", "status": "warning", "durationMs": 130, "relatedArtifactId": "sample-validation-001", "warnings": ["Pre-migration validation decision is no_go."], "errors": [], "notes": [] },
+    { "stepId": "step-10", "order": 10, "name": "Transfer Preview", "status": "warning", "durationMs": 90, "relatedArtifactId": "sample-preview-001", "warnings": ["Transfer preview contains blocked items."], "errors": [], "notes": [] }
+  ],
+  "artifacts": [
+    { "artifactId": "sample-scan-001", "artifactType": "discovery_scan", "displayName": "Discovery scan", "status": "live-import", "location": "sample-scan-001" },
+    { "artifactId": "sample-preview-001", "artifactType": "transfer_preview", "displayName": "SharePoint transfer preview", "status": "preview_only", "location": "sample-preview-001" }
+  ],
+  "issues": [
+    { "issueId": "sample-issue-001", "severity": "Warning", "stepName": "Pre-Migration Validation", "message": "Pre-migration validation decision is no_go.", "recommendedAction": "Review No-Go decision before pilot migration." }
+  ],
+  "reportPaths": {
+    "json": "workflow-result.json",
+    "markdown": "workflow-report.md",
+    "artifacts": "workflow-artifacts.json",
+    "issues": "workflow-issues.csv"
+  }
+}

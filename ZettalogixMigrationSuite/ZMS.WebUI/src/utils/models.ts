@@ -1,6 +1,30 @@
 export type ConnectionType = "SharePointOnPrem" | "SharePointOnline" | "FileShare" | "GoogleDrive";
 export type ConnectionStatus = "Healthy" | "Warning" | "Disconnected";
 export type JobStatus = "Draft" | "Queued" | "Running" | "Paused" | "Completed" | "CompletedWithErrors" | "Failed";
+export type EnterpriseJobState =
+  | "CREATED"
+  | "DISCOVERY_PENDING"
+  | "DISCOVERING"
+  | "DISCOVERED"
+  | "ANALYSIS_PENDING"
+  | "ANALYZING"
+  | "READY_FOR_REVIEW"
+  | "APPROVED"
+  | "QUEUED"
+  | "MIGRATING"
+  | "THROTTLED"
+  | "RETRYING"
+  | "PAUSED"
+  | "PARTIALLY_FAILED"
+  | "DELTA_SYNC_PENDING"
+  | "DELTA_SYNCING"
+  | "VALIDATING"
+  | "COMPLETED"
+  | "FAILED_DISCOVERY"
+  | "FAILED_ANALYSIS"
+  | "FAILED_MIGRATION"
+  | "FAILED_VALIDATION"
+  | "CANCELLED";
 export type NotificationTone = "success" | "error" | "info";
 export type JobEventLevel = "info" | "success" | "warning" | "error";
 
@@ -44,11 +68,54 @@ export interface MigrationJob {
   failedFiles: number;
   progress: number;
   status: JobStatus;
+  enterpriseState: EnterpriseJobState;
+  retryCount: number;
+  correlationId?: string;
+  failureReason?: string;
   createdAt: string;
   updatedAt: string;
   startedAt?: string;
   lastError?: string;
   history: JobEvent[];
+}
+
+export interface ValidationRunRecord {
+  id: string;
+  migrationJobId: string;
+  status: string;
+  startedAt: string;
+  completedAt?: string | null;
+  sourceItemCount: number;
+  targetItemCount: number;
+  passedCount: number;
+  warningCount: number;
+  failedCount: number;
+  summary: string;
+  errorMessage?: string | null;
+}
+
+export interface ValidationFindingRecord {
+  id: string;
+  validationRunId: string;
+  severity: string;
+  category: string;
+  message: string;
+  sourcePath: string;
+  targetPath: string;
+  recommendedAction: string;
+}
+
+export interface ValidationItemRecord {
+  id: string;
+  validationRunId: string;
+  migrationItemId?: string | null;
+  sourcePath: string;
+  targetPath: string;
+  sourceSizeBytes: number;
+  targetSizeBytes: number;
+  status: string;
+  differenceType: string;
+  message: string;
 }
 
 export interface AppSettings {

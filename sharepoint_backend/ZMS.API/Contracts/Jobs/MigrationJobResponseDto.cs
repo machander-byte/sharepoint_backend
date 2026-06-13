@@ -18,10 +18,14 @@ public class MigrationJobResponseDto
     public int BatchSize { get; set; }
     public int MaxRetryCount { get; set; }
     public JobStatus Status { get; set; }
+    public EnterpriseJobState EnterpriseState { get; set; }
     public int TotalItems { get; set; }
     public int CompletedItems { get; set; }
     public int FailedItems { get; set; }
     public string? LastError { get; set; }
+    public string? FailureReason { get; set; }
+    public int RetryCount { get; set; }
+    public string? CorrelationId { get; set; }
     public DateTimeOffset CreatedUtc { get; set; }
     public DateTimeOffset? StartedUtc { get; set; }
     public DateTimeOffset? FinishedUtc { get; set; }

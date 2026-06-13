@@ -43,7 +43,7 @@ public class SecretProtector : ISecretProtector
         catch (CryptographicException exception)
         {
             throw new InvalidOperationException(
-                "A saved connection secret could not be decrypted. Configure a persistent DataProtection:KeyRingPath on every API/worker host and recreate the affected connection if the key ring was lost.",
+                "A saved connection secret could not be decrypted. Configure persistent Data Protection keys with DataProtection:KeyStorage=Database or a persistent DataProtection:KeyRingPath on every API/worker host, then recreate the affected connection if the key ring was lost.",
                 exception);
         }
     }

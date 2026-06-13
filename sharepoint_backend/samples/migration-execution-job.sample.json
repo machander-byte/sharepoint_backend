@@ -1,0 +1,129 @@
+{
+  "jobId": "sample-execution-job-001",
+  "planId": "sample-migration-plan-001",
+  "validationId": "sample-validation-001",
+  "simulationId": "sample-simulation-001",
+  "mode": "simulation",
+  "status": "completed_with_warnings",
+  "createdAt": "2026-06-01T00:00:00Z",
+  "startedAt": "2026-06-01T00:05:00Z",
+  "completedAt": "2026-06-01T00:12:00Z",
+  "createdBy": "Migration Lead",
+  "summary": {
+    "progressPercent": 100,
+    "totalWaves": 4,
+    "completedWaves": 4,
+    "totalItems": 8,
+    "completedItems": 5,
+    "failedItems": 1,
+    "skippedItems": 2,
+    "warningCount": 4,
+    "errorCount": 1
+  },
+  "warnings": [
+    "Simulation Mode - No tenant changes performed.",
+    "Restricted-content permission review should be repeated before live execution."
+  ],
+  "waves": [
+    {
+      "waveExecutionId": "wave-exec-001",
+      "sourceWaveId": "wave-1",
+      "waveName": "Wave 1 - Low Risk Pilot",
+      "order": 1,
+      "status": "completed",
+      "progressPercent": 100,
+      "totalItems": 2,
+      "completedItems": 2,
+      "failedItems": 0,
+      "skippedItems": 0,
+      "estimatedFiles": 150,
+      "estimatedStorageBytes": 2147483648,
+      "items": [
+        {
+          "itemExecutionId": "item-exec-001",
+          "sourceItemId": "item-001",
+          "siteCollection": "HR",
+          "library": "Policies Archive",
+          "path": "/Policies Archive",
+          "itemType": "Library",
+          "action": "migrate",
+          "status": "completed",
+          "progressPercent": 100,
+          "simulatedSourceUrl": "https://source/sites/hr/Policies",
+          "simulatedTargetUrl": "https://target/sites/hr/Policies",
+          "warnings": [],
+          "errors": []
+        }
+      ],
+      "checkpoints": [],
+      "errors": []
+    },
+    {
+      "waveExecutionId": "wave-exec-003",
+      "sourceWaveId": "wave-3",
+      "waveName": "Wave 3 - Restricted Content",
+      "order": 3,
+      "status": "completed_with_warnings",
+      "progressPercent": 100,
+      "totalItems": 2,
+      "completedItems": 1,
+      "failedItems": 0,
+      "skippedItems": 1,
+      "estimatedFiles": 350,
+      "estimatedStorageBytes": 8589934592,
+      "items": [
+        {
+          "itemExecutionId": "item-exec-006",
+          "sourceItemId": "item-006",
+          "siteCollection": "Finance",
+          "library": "Payroll Documents",
+          "path": "/Payroll Documents",
+          "itemType": "Library",
+          "action": "manual_review",
+          "status": "skipped",
+          "progressPercent": 100,
+          "simulatedSourceUrl": "https://source/sites/finance/Payroll",
+          "simulatedTargetUrl": "https://target/sites/finance/Payroll",
+          "warnings": ["Manual review item skipped in simulation."],
+          "errors": []
+        }
+      ],
+      "checkpoints": [],
+      "errors": []
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpointId": "job-checkpoint-001",
+      "name": "Simulation mode confirmed",
+      "status": "passed",
+      "message": "Simulation Mode - No tenant changes performed.",
+      "severity": "Info"
+    }
+  ],
+  "timeline": [
+    {
+      "eventId": "event-001",
+      "createdAt": "2026-06-01T00:00:00Z",
+      "eventType": "JobCreated",
+      "message": "Simulation Mode - No tenant changes performed. Job created.",
+      "severity": "Info"
+    },
+    {
+      "eventId": "event-002",
+      "createdAt": "2026-06-01T00:12:00Z",
+      "eventType": "JobCompleted",
+      "message": "Simulated execution completed with status completed_with_warnings.",
+      "severity": "Warning"
+    }
+  ],
+  "errors": [],
+  "reportPaths": {
+    "json": "execution-job.json",
+    "timeline": "execution-timeline.json",
+    "markdown": "execution-report.md",
+    "items": "execution-items.csv",
+    "errors": "execution-errors.csv",
+    "waves": "wave-summary.csv"
+  }
+}

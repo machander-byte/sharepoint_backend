@@ -10,6 +10,8 @@ public class ConnectionResponseDto
     public string Url { get; set; } = string.Empty;
     public string? RootPath { get; set; }
     public string? DocumentLibraryName { get; set; }
+    public string? ConnectionKind { get; set; }
+    public string? AuthenticationType { get; set; }
     public bool HasClientSecret { get; set; }
     public bool HasRefreshToken { get; set; }
     public bool IsEnabled { get; set; }

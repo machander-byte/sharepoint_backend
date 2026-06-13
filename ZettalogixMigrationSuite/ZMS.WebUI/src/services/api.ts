@@ -6,7 +6,10 @@ import {
   CreateConnectionInput,
   CreateJobInput,
   JobEvent,
-  MigrationJob
+  MigrationJob,
+  ValidationFindingRecord,
+  ValidationItemRecord,
+  ValidationRunRecord
 } from "../utils/models";
 import { formatErrorForToast } from "../utils/errorHelp";
 import { createClient } from "../lib/client";
@@ -51,10 +54,14 @@ interface ApiMigrationJobResponse {
   batchSize: number;
   maxRetryCount: number;
   status: MigrationJob["status"];
+  enterpriseState: MigrationJob["enterpriseState"];
   totalItems: number;
   completedItems: number;
   failedItems: number;
   lastError?: string;
+  failureReason?: string;
+  retryCount: number;
+  correlationId?: string;
   createdUtc: string;
   startedUtc?: string;
   finishedUtc?: string;
@@ -72,6 +79,19 @@ interface ApiLogEntry {
   message: string;
   details?: string;
   createdUtc: string;
+}
+
+interface ApiMigrationJobEventResponse {
+  id: string;
+  jobId: string;
+  eventType: string;
+  previousState?: string | null;
+  newState: string;
+  message: string;
+  severity: string;
+  createdAt: string;
+  correlationId?: string | null;
+  metadataJson: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -232,6 +252,40 @@ async function downloadReportFile(path: string): Promise<void> {
   window.URL.revokeObjectURL(objectUrl);
 }
 
+async function downloadApiFile(path: string, fallbackFileName: string): Promise<void> {
+  const authHeaders = await getAuthorizationHeaders();
+  let response: Response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}/api${path}`, {
+      headers: authHeaders
+    });
+  } catch {
+    throw new Error(
+      formatErrorForToast(`API is not reachable at ${apiBaseUrl}. Start the backend and refresh the page.`)
+    );
+  }
+
+  if (!response.ok) {
+    const message = await readErrorMessage(response, path);
+    throw new Error(formatErrorForToast(message));
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const fileNameMatch = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+  const fileName = fileNameMatch?.[1] ? decodeURIComponent(fileNameMatch[1]) : fallbackFileName;
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = objectUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}
+
 function getConnectionSummary(connection: ApiConnectionResponse): string {
   switch (connection.type) {
     case "SharePointOnPrem":
@@ -295,7 +349,23 @@ function mapEventLevel(severity: ApiLogEntry["severity"]): JobEvent["level"] {
   }
 }
 
-function mapJob(job: ApiMigrationJobResponse, report?: ApiJobReportResponse | null): MigrationJob {
+function mapTimelineLevel(severity: string): JobEvent["level"] {
+  switch (severity.toLowerCase()) {
+    case "critical":
+    case "high":
+    case "error":
+      return "error";
+    case "warning":
+    case "medium":
+      return "warning";
+    case "low":
+    case "info":
+    default:
+      return "info";
+  }
+}
+
+function mapJob(job: ApiMigrationJobResponse, report?: ApiJobReportResponse | null, timeline: JobEvent[] = []): MigrationJob {
   const totalFiles = job.totalItems;
   const migratedFiles = job.completedItems;
   const progress =
@@ -319,18 +389,24 @@ function mapJob(job: ApiMigrationJobResponse, report?: ApiJobReportResponse | nu
     failedFiles: job.failedItems,
     progress,
     status: job.status,
+    enterpriseState: job.enterpriseState ?? "CREATED",
+    retryCount: job.retryCount ?? 0,
+    correlationId: job.correlationId,
+    failureReason: job.failureReason,
     createdAt: job.createdUtc,
     updatedAt: job.updatedUtc,
     startedAt: job.startedUtc,
     lastError: job.lastError,
-    history:
-      report?.recentLogs.map((log) => ({
+    history: [
+      ...timeline,
+      ...(report?.recentLogs.map((log) => ({
         id: log.id,
         timestamp: log.createdUtc,
         level: mapEventLevel(log.severity),
         message: log.message,
         details: log.details
-      })) ?? []
+      })) ?? [])
+    ].sort((left, right) => right.timestamp.localeCompare(left.timestamp))
   };
 }
 
@@ -339,6 +415,23 @@ async function getJobReport(jobId: string): Promise<ApiJobReportResponse | null>
     return await request<ApiJobReportResponse>(`/reports/jobs/${jobId}`);
   } catch {
     return null;
+  }
+}
+
+async function getJobTimeline(jobId: string): Promise<JobEvent[]> {
+  try {
+    const timeline = await request<ApiMigrationJobEventResponse[]>(`/jobs/${jobId}/timeline`);
+    return timeline.map((event) => ({
+      id: event.id,
+      timestamp: event.createdAt,
+      level: mapTimelineLevel(event.severity),
+      message: `${event.eventType}: ${event.newState}`,
+      details: event.previousState
+        ? `${event.previousState} -> ${event.newState}. ${event.message}`
+        : event.message
+    }));
+  } catch {
+    return [];
   }
 }
 
@@ -369,9 +462,10 @@ export const api = {
   async getJobs(): Promise<MigrationJob[]> {
     const jobs = await request<ApiMigrationJobResponse[]>("/jobs");
     const reports = await Promise.all(jobs.map((job) => getJobReport(job.id)));
+    const timelines = await Promise.all(jobs.map((job) => getJobTimeline(job.id)));
 
     return jobs
-      .map((job, index) => mapJob(job, reports[index]))
+      .map((job, index) => mapJob(job, reports[index], timelines[index]))
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   },
 
@@ -382,7 +476,7 @@ export const api = {
         getJobReport(id)
       ]);
 
-      return mapJob(job, report);
+      return mapJob(job, report, await getJobTimeline(id));
     } catch {
       return undefined;
     }
@@ -407,7 +501,7 @@ export const api = {
       })
     });
 
-    return mapJob(job, await getJobReport(job.id));
+    return mapJob(job, await getJobReport(job.id), await getJobTimeline(job.id));
   },
 
   async startMigration(id: string): Promise<void> {
@@ -416,6 +510,49 @@ export const api = {
 
   async pauseMigration(id: string): Promise<void> {
     await request<void>(`/jobs/${id}/pause`, { method: "POST", body: "{}" });
+  },
+
+  async resumeMigration(id: string): Promise<void> {
+    await request<void>(`/jobs/${id}/resume`, { method: "POST", body: "{}" });
+  },
+
+  async cancelMigration(id: string): Promise<void> {
+    await request<void>(`/jobs/${id}/cancel`, { method: "POST", body: "{}" });
+  },
+
+  async retryMigration(id: string): Promise<void> {
+    await request<void>(`/jobs/${id}/retry`, { method: "POST", body: "{}" });
+  },
+
+  async startValidation(jobId: string): Promise<ValidationRunRecord> {
+    return await request<ValidationRunRecord>("/validation/start", {
+      method: "POST",
+      body: JSON.stringify({ migrationJobId: jobId })
+    });
+  },
+
+  async getLatestValidation(jobId: string): Promise<ValidationRunRecord | null> {
+    try {
+      return await request<ValidationRunRecord>(`/migrations/${jobId}/validation/latest`);
+    } catch {
+      return null;
+    }
+  },
+
+  async getValidationFindings(validationRunId: string): Promise<ValidationFindingRecord[]> {
+    return await request<ValidationFindingRecord[]>(`/validation/${validationRunId}/findings`);
+  },
+
+  async getValidationItems(validationRunId: string): Promise<ValidationItemRecord[]> {
+    return await request<ValidationItemRecord[]>(`/validation/${validationRunId}/items`);
+  },
+
+  getValidationExportUrl(validationRunId: string, exportType: string): string {
+    return `${apiBaseUrl}/api/validation/${validationRunId}/export/${exportType}`;
+  },
+
+  async downloadValidationExport(validationRunId: string, exportType: string): Promise<void> {
+    await downloadApiFile(`/validation/${validationRunId}/export/${exportType}`, `validation-${validationRunId}-${exportType}`);
   },
 
   async getConnections(): Promise<ConnectionRecord[]> {

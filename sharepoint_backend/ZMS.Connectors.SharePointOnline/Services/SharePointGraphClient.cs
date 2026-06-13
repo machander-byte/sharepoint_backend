@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ZMS.Core.Models;
 using ZMS.Core.Options;
+using ZMS.Core.Security;
 
 namespace ZMS.Connectors.SharePointOnline.Services;
 
@@ -746,7 +747,7 @@ public class SharePointGraphClient
         var error = await response.Content.ReadAsStringAsync(cancellationToken);
         response.Dispose();
         throw new InvalidOperationException(
-            BuildGraphFailureMessage(response.StatusCode, error));
+            SecretRedactor.Redact(BuildGraphFailureMessage(response.StatusCode, error)));
     }
 
     private async Task<string> GetAccessTokenAsync(
@@ -785,7 +786,7 @@ public class SharePointGraphClient
         {
             var error = await response.Content.ReadAsStringAsync(cancellationToken);
             throw new InvalidOperationException(
-                $"Failed to acquire a Microsoft Graph access token: {error}");
+                SecretRedactor.Redact($"Failed to acquire a Microsoft Graph access token: {error}"));
         }
 
         var token = await ReadRequiredAsync<TokenResponse>(response, cancellationToken);
@@ -995,7 +996,8 @@ public class SharePointGraphClient
     private static string TrimError(string error)
     {
         var trimmed = string.IsNullOrWhiteSpace(error) ? "No response body." : error.Trim();
-        return trimmed.Length <= 1200 ? trimmed : $"{trimmed[..1200]}...";
+        var redacted = SecretRedactor.Redact(trimmed);
+        return redacted.Length <= 1200 ? redacted : $"{redacted[..1200]}...";
     }
 
     private static string ResolveLibraryName(string? libraryName)

@@ -1,0 +1,41 @@
+{
+  "validationId": "sample-pre-migration-validation",
+  "planId": "sample-migration-plan",
+  "generatedAt": "2026-06-01T00:00:00Z",
+  "status": "completed",
+  "decision": "no_go",
+  "summary": {
+    "errors": 3,
+    "warnings": 8,
+    "passedChecks": 22,
+    "blockedWaves": 2,
+    "readyWaves": 1
+  },
+  "checks": [
+    {
+      "checkId": "permissions-review",
+      "category": "Permissions",
+      "title": "Permission mapping reviewed",
+      "description": "Permission mapping reviewed",
+      "status": "failed",
+      "severity": "High",
+      "affectedWave": "Wave 3 - Restricted Content",
+      "affectedItem": "Payroll Confidential",
+      "evidence": "Required checklist item is not completed.",
+      "recommendedAction": "Complete permission mapping review before execution.",
+      "requiredForGoLive": true
+    }
+  ],
+  "waveResults": [
+    { "waveId": "wave-1", "waveName": "Wave 1 - Low Risk Pilot", "status": "ready", "passedChecks": 8, "warnings": 0, "errors": 0 },
+    { "waveId": "wave-3", "waveName": "Wave 3 - Restricted Content", "status": "blocked", "passedChecks": 4, "warnings": 2, "errors": 2 }
+  ],
+  "blockers": ["Permission mapping reviewed"],
+  "warnings": ["No validation checklist items are completed."],
+  "recommendations": ["Complete permission mapping review before execution."],
+  "exportPaths": {
+    "json": "validation-result.json",
+    "csv": "validation-checks.csv",
+    "markdown": "go-no-go-report.md"
+  }
+}

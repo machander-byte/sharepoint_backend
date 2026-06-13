@@ -1,0 +1,414 @@
+{
+  "scanId": "live-20260519140000",
+  "scanName": "Live SharePoint Discovery Sample",
+  "mode": "live-import",
+  "status": "completed",
+  "startedAt": "2026-05-19T14:00:00Z",
+  "completedAt": "2026-05-19T14:08:30Z",
+  "summary": {
+    "siteCollections": 5,
+    "subsites": 20,
+    "libraries": 25,
+    "lists": 20,
+    "files": 1286,
+    "folders": 312,
+    "totalStorageBytes": 5068061400,
+    "metadataFields": 40,
+    "permissionGroups": 15,
+    "brokenInheritanceCount": 5,
+    "longPathRisks": 2,
+    "largeFileRisks": 2,
+    "missingMetadataIssues": 6,
+    "readinessScore": 82
+  },
+  "siteCollections": [
+    {
+      "id": "hr",
+      "title": "ZMS HR Portal",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-HR-Portal",
+      "department": "Human Resources",
+      "description": "Employee services, policy, payroll, and confidential HR records.",
+      "fileCount": 248,
+      "folderCount": 64,
+      "sizeBytes": 1028659200,
+      "subsites": [
+        {
+          "id": "hr-policies",
+          "title": "Policies",
+          "url": "https://zettalogix.sharepoint.com/sites/ZMS-HR-Portal/Policies",
+          "description": "Discovered subsite"
+        }
+      ],
+      "libraries": [
+        {
+          "id": "hr-docs",
+          "title": "HR Documents",
+          "type": "Document Library",
+          "description": "Core HR document library",
+          "url": "/sites/ZMS-HR-Portal/HR Documents",
+          "fileCount": 248,
+          "folderCount": 64,
+          "sizeBytes": 1028659200,
+          "brokenInheritance": true,
+          "hasArchivedFolders": true,
+          "contentTypes": ["Document", "Policy"],
+          "metadataFields": [
+            {
+              "id": "employee-type",
+              "name": "Employee Type",
+              "fieldType": "Choice",
+              "required": true,
+              "choices": ["Full Time", "Contractor"],
+              "defaultValue": null,
+              "missingValueCount": 3,
+              "mappedTargetField": "",
+              "mappingRisk": "High"
+            }
+          ],
+          "permissions": [],
+          "folders": [],
+          "files": []
+        }
+      ],
+      "lists": [
+        {
+          "id": "hr-requests",
+          "title": "HR Requests",
+          "description": "Employee request tracking",
+          "itemCount": 52,
+          "fields": []
+        }
+      ],
+      "metadataFields": [],
+      "sharePointGroups": [
+        {
+          "id": "hr-members",
+          "name": "ZMS HR Members",
+          "role": "Contribute",
+          "users": ["hr.manager@zettalogix.com", "hr.specialist@zettalogix.com"]
+        }
+      ],
+      "permissions": [],
+      "configuredRisks": []
+    },
+    {
+      "id": "finance",
+      "title": "ZMS Finance Hub",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-Finance-Hub",
+      "department": "Finance",
+      "description": "Budget, audit, tax, and contract finance content.",
+      "fileCount": 312,
+      "folderCount": 82,
+      "sizeBytes": 1593835520,
+      "subsites": [],
+      "libraries": [],
+      "lists": [],
+      "metadataFields": [],
+      "sharePointGroups": [
+        {
+          "id": "finance-owners",
+          "name": "ZMS Finance Owners",
+          "role": "Full Control",
+          "users": ["finance.owner@zettalogix.com"]
+        }
+      ],
+      "permissions": [],
+      "configuredRisks": []
+    },
+    {
+      "id": "it",
+      "title": "ZMS IT Operations",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-IT-Operations",
+      "department": "IT",
+      "description": "Operations, security, architecture, and support knowledge.",
+      "fileCount": 286,
+      "folderCount": 71,
+      "sizeBytes": 1184890880,
+      "subsites": [],
+      "libraries": [],
+      "lists": [],
+      "metadataFields": [],
+      "sharePointGroups": [
+        {
+          "id": "it-security",
+          "name": "ZMS IT Security",
+          "role": "Read",
+          "users": ["security.lead@zettalogix.com"]
+        }
+      ],
+      "permissions": [],
+      "configuredRisks": []
+    },
+    {
+      "id": "pmo",
+      "title": "ZMS PMO",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-PMO",
+      "department": "PMO",
+      "description": "Project governance, plans, milestones, and delivery status.",
+      "fileCount": 221,
+      "folderCount": 49,
+      "sizeBytes": 719323136,
+      "subsites": [],
+      "libraries": [],
+      "lists": [],
+      "metadataFields": [],
+      "sharePointGroups": [
+        {
+          "id": "pmo-members",
+          "name": "ZMS PMO Members",
+          "role": "Contribute",
+          "users": ["pmo.lead@zettalogix.com"]
+        }
+      ],
+      "permissions": [],
+      "configuredRisks": []
+    },
+    {
+      "id": "operations",
+      "title": "ZMS Operations",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-Operations",
+      "department": "Operations",
+      "description": "Business operations, procedures, vendors, and process records.",
+      "fileCount": 219,
+      "folderCount": 46,
+      "sizeBytes": 541352664,
+      "subsites": [],
+      "libraries": [],
+      "lists": [],
+      "metadataFields": [],
+      "sharePointGroups": [
+        {
+          "id": "ops-members",
+          "name": "ZMS Operations Members",
+          "role": "Contribute",
+          "users": ["operations.manager@zettalogix.com"]
+        }
+      ],
+      "permissions": [],
+      "configuredRisks": []
+    }
+  ],
+  "inventoryItems": [
+    {
+      "id": "inv-hr-site",
+      "siteCollection": "ZMS HR Portal",
+      "subsite": "",
+      "library": "",
+      "itemType": "Site Collection",
+      "path": "https://zettalogix.sharepoint.com/sites/ZMS-HR-Portal",
+      "fileCount": 248,
+      "sizeBytes": 1028659200,
+      "metadataCount": 8,
+      "permissionStatus": "Inherited",
+      "riskLevel": "Medium",
+      "readinessStatus": "Review"
+    },
+    {
+      "id": "inv-hr-payroll",
+      "siteCollection": "ZMS HR Portal",
+      "subsite": "",
+      "library": "Payroll Confidential",
+      "itemType": "Library",
+      "path": "/sites/ZMS-HR-Portal/Payroll Confidential",
+      "fileCount": 47,
+      "sizeBytes": 428867584,
+      "metadataCount": 8,
+      "permissionStatus": "Broken",
+      "riskLevel": "High",
+      "readinessStatus": "Needs remediation"
+    },
+    {
+      "id": "inv-finance-audit",
+      "siteCollection": "ZMS Finance Hub",
+      "subsite": "",
+      "library": "Audit Records",
+      "itemType": "Library",
+      "path": "/sites/ZMS-Finance-Hub/Audit Records",
+      "fileCount": 91,
+      "sizeBytes": 686817280,
+      "metadataCount": 9,
+      "permissionStatus": "Broken",
+      "riskLevel": "High",
+      "readinessStatus": "Needs remediation"
+    },
+    {
+      "id": "inv-it-security",
+      "siteCollection": "ZMS IT Operations",
+      "subsite": "",
+      "library": "Security Runbooks",
+      "itemType": "Library",
+      "path": "/sites/ZMS-IT-Operations/Security Runbooks",
+      "fileCount": 83,
+      "sizeBytes": 548405248,
+      "metadataCount": 7,
+      "permissionStatus": "Broken",
+      "riskLevel": "High",
+      "readinessStatus": "Needs remediation"
+    },
+    {
+      "id": "inv-pmo-archive",
+      "siteCollection": "ZMS PMO",
+      "subsite": "",
+      "library": "Project Archive",
+      "itemType": "Folder",
+      "path": "/sites/ZMS-PMO/Project Documents/Archive/2022/ERP/Steering Committee/Final",
+      "fileCount": 38,
+      "sizeBytes": 73400320,
+      "metadataCount": 5,
+      "permissionStatus": "Inherited",
+      "riskLevel": "Medium",
+      "readinessStatus": "Review"
+    },
+    {
+      "id": "inv-ops-contracts",
+      "siteCollection": "ZMS Operations",
+      "subsite": "",
+      "library": "Vendor Contracts",
+      "itemType": "Library",
+      "path": "/sites/ZMS-Operations/Vendor Contracts",
+      "fileCount": 64,
+      "sizeBytes": 214958080,
+      "metadataCount": 6,
+      "permissionStatus": "Inherited",
+      "riskLevel": "High",
+      "readinessStatus": "Review"
+    }
+  ],
+  "permissionRisks": [
+    {
+      "id": "perm-hr-payroll",
+      "site": "ZMS HR Portal",
+      "libraryOrFolder": "/sites/ZMS-HR-Portal/Payroll Confidential",
+      "inheritanceStatus": "Broken",
+      "groups": ["ZMS HR Owners"],
+      "users": ["hr.director@zettalogix.com"],
+      "accessLevels": ["Full Control", "Read"],
+      "riskLevel": "High",
+      "recommendedAction": "Review payroll access and map target restricted groups."
+    },
+    {
+      "id": "perm-finance-audit",
+      "site": "ZMS Finance Hub",
+      "libraryOrFolder": "/sites/ZMS-Finance-Hub/Audit Records",
+      "inheritanceStatus": "Broken",
+      "groups": ["ZMS Finance Owners"],
+      "users": ["audit.partner@external.example"],
+      "accessLevels": ["Read"],
+      "riskLevel": "High",
+      "recommendedAction": "Validate external audit access before migration."
+    },
+    {
+      "id": "perm-it-security",
+      "site": "ZMS IT Operations",
+      "libraryOrFolder": "/sites/ZMS-IT-Operations/Security Runbooks",
+      "inheritanceStatus": "Broken",
+      "groups": ["ZMS IT Security"],
+      "users": ["security.lead@zettalogix.com"],
+      "accessLevels": ["Contribute"],
+      "riskLevel": "High",
+      "recommendedAction": "Confirm least-privilege security runbook permissions."
+    }
+  ],
+  "metadataFindings": [
+    {
+      "id": "meta-hr-employee-type",
+      "site": "ZMS HR Portal",
+      "library": "HR Documents",
+      "fieldName": "Employee Type",
+      "fieldType": "Choice",
+      "required": true,
+      "missingValueCount": 3,
+      "mappedTargetField": "",
+      "mappingRisk": "High"
+    },
+    {
+      "id": "meta-finance-retention",
+      "site": "ZMS Finance Hub",
+      "library": "Audit Records",
+      "fieldName": "Retention Category",
+      "fieldType": "Choice",
+      "required": true,
+      "missingValueCount": 2,
+      "mappedTargetField": "",
+      "mappingRisk": "High"
+    },
+    {
+      "id": "meta-it-owner",
+      "site": "ZMS IT Operations",
+      "library": "Security Runbooks",
+      "fieldName": "System Owner",
+      "fieldType": "User",
+      "required": true,
+      "missingValueCount": 1,
+      "mappedTargetField": "",
+      "mappingRisk": "Medium"
+    },
+    {
+      "id": "meta-pmo-phase",
+      "site": "ZMS PMO",
+      "library": "Project Documents",
+      "fieldName": "Project Phase",
+      "fieldType": "Choice",
+      "required": false,
+      "missingValueCount": 0,
+      "mappedTargetField": "",
+      "mappingRisk": "Medium"
+    }
+  ],
+  "migrationRisks": [
+    {
+      "id": "risk-hr-payroll-perm",
+      "riskType": "Broken Permissions",
+      "site": "ZMS HR Portal",
+      "libraryOrPath": "Payroll Confidential",
+      "path": "/sites/ZMS-HR-Portal/Payroll Confidential",
+      "riskLevel": "High",
+      "description": "Unique permissions detected on payroll content.",
+      "recommendedAction": "Validate target restricted group mapping."
+    },
+    {
+      "id": "risk-finance-large",
+      "riskType": "Large Files",
+      "site": "ZMS Finance Hub",
+      "libraryOrPath": "Audit Records",
+      "path": "/sites/ZMS-Finance-Hub/Audit Records/FY2025/audit-evidence.pst",
+      "riskLevel": "High",
+      "description": "File exceeds 500 MB.",
+      "recommendedAction": "Review large-file migration handling."
+    },
+    {
+      "id": "risk-it-restricted",
+      "riskType": "Restricted Content",
+      "site": "ZMS IT Operations",
+      "libraryOrPath": "Security Runbooks",
+      "path": "/sites/ZMS-IT-Operations/Security Runbooks/Restricted/Incident Response.docx",
+      "riskLevel": "High",
+      "description": "Path indicates restricted security content.",
+      "recommendedAction": "Confirm target permissions before migration."
+    },
+    {
+      "id": "risk-pmo-archive",
+      "riskType": "Archived Content",
+      "site": "ZMS PMO",
+      "libraryOrPath": "Project Documents",
+      "path": "/sites/ZMS-PMO/Project Documents/Archive/2022/ERP",
+      "riskLevel": "Medium",
+      "description": "Archived project folder detected.",
+      "recommendedAction": "Confirm archive retention and migration scope."
+    },
+    {
+      "id": "risk-ops-contracts",
+      "riskType": "Restricted Content",
+      "site": "ZMS Operations",
+      "libraryOrPath": "Vendor Contracts",
+      "path": "/sites/ZMS-Operations/Vendor Contracts/Tax/2025",
+      "riskLevel": "High",
+      "description": "Contract and tax content detected.",
+      "recommendedAction": "Review vendor contract access."
+    }
+  ],
+  "warnings": [
+    "Sample live import data. Replace with output from scripts/11-Run-Discovery-ReadOnly.ps1 for real tenant discovery."
+  ],
+  "errors": []
+}

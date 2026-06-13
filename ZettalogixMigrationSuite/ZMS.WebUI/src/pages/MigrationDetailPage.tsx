@@ -15,6 +15,9 @@ export default function MigrationDetailPage(): JSX.Element {
   const jobs = useAppStore((state) => state.jobs);
   const startJob = useAppStore((state) => state.startJob);
   const pauseJob = useAppStore((state) => state.pauseJob);
+  const resumeJob = useAppStore((state) => state.resumeJob);
+  const cancelJob = useAppStore((state) => state.cancelJob);
+  const retryJob = useAppStore((state) => state.retryJob);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useJobsPolling(true);
@@ -52,6 +55,15 @@ export default function MigrationDetailPage(): JSX.Element {
               <button type="button" className="ghost-button" onClick={() => setConfirmOpen(true)} disabled={job.status !== "Running"}>
                 Pause
               </button>
+              <button type="button" className="ghost-button" onClick={() => void resumeJob(job.id)} disabled={job.status !== "Paused"}>
+                Resume
+              </button>
+              <button type="button" className="ghost-button" onClick={() => void retryJob(job.id)} disabled={!["Failed", "CompletedWithErrors"].includes(job.status)}>
+                Retry
+              </button>
+              <button type="button" className="ghost-button" onClick={() => void cancelJob(job.id)} disabled={["Completed", "CompletedWithErrors", "Failed"].includes(job.status)}>
+                Cancel
+              </button>
               <button type="button" className="ghost-button" onClick={() => void api.downloadReport(`/jobs/${job.id}/summary.csv`)}>
                 Summary CSV
               </button>
@@ -78,8 +90,16 @@ export default function MigrationDetailPage(): JSX.Element {
             <div className="detail-list">
             <div>
               <span>Status</span>
-              <strong>{formatJobStatus(job.status)}</strong>
+              <strong>{formatJobStatus(job.status)} / {job.enterpriseState}</strong>
             </div>
+              <div>
+                <span>Retries</span>
+                <strong>{job.retryCount}</strong>
+              </div>
+              <div>
+                <span>Correlation</span>
+                <strong>{job.correlationId ?? "Not assigned"}</strong>
+              </div>
               <div>
                 <span>Started</span>
                 <strong>{formatDate(job.startedAt)}</strong>

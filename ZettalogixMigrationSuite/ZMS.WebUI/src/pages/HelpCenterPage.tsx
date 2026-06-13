@@ -66,9 +66,9 @@ const requirementGroups = [
     icon: "dns",
     items: [
       ".NET 8 runtime or self-contained API publish output.",
-      "SQL Server connection string supplied through ConnectionStrings__ZmsDatabase.",
+      "Supabase Postgres pooler connection string supplied through ConnectionStrings__ZmsDatabase.",
       "HTTPS endpoint, production CORS origin, and reverse proxy routing for /api.",
-      "Persistent ASP.NET Core Data Protection key ring path for encrypted connection secrets.",
+      "Persistent ASP.NET Core Data Protection key storage for encrypted connection secrets.",
       "Static web build from npm run build deployed behind the same public origin or a configured API URL."
     ]
   }
@@ -195,7 +195,7 @@ export default function HelpCenterPage(): JSX.Element {
         <aside className={styles.quickPanel}>
           <span className="eyebrow">Before You Start</span>
           <strong>Minimum ready state</strong>
-          <p>One healthy source connection, one healthy SharePoint Online target, a reachable SQL database, and backend secrets supplied by environment variables.</p>
+          <p>One healthy source connection, one healthy SharePoint Online target, a reachable Supabase Postgres database, and backend secrets supplied by environment variables.</p>
           <a className="primary-button" href="#external-resources">
             <span className="material-symbols-outlined">link</span>
             Open setup links
@@ -253,7 +253,7 @@ export default function HelpCenterPage(): JSX.Element {
         <div>
           <span className="eyebrow">Deployment Readiness</span>
           <h2>Production checklist</h2>
-          <p>Publish the API, build the web UI, configure real SQL Server, supply secrets through the host environment, persist Data Protection keys, and keep frontend .env files free of secrets.</p>
+          <p>Publish the API, build the web UI, configure Supabase Postgres, supply secrets through the host environment, persist Data Protection keys in the database or a durable key ring, and keep frontend .env files free of secrets.</p>
         </div>
         <div className={styles.commandList}>
           <code>dotnet publish .\ZMS.API\ZMS.API.csproj -c Release -o .\artifacts\api</code>

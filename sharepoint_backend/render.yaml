@@ -13,12 +13,20 @@ services:
         value: Postgres
       - key: ConnectionStrings__ZmsDatabase
         sync: false
-      - key: DataProtection__KeyRingPath
-        value: /tmp/dataprotection-keys
+      - key: DataProtection__KeyStorage
+        value: Database
       - key: Supabase__Auth__Authority
         value: https://hxptmbphcdyzhmwnimwh.supabase.co/auth/v1
       - key: Supabase__Auth__Audience
         value: authenticated
+      - key: Authorization__EnforceRoles
+        value: "false"
+      - key: RequestLimits__MaxBodyBytes
+        value: "50000000"
+      - key: Sentry__Dsn
+        sync: false
+      - key: Sentry__TracesSampleRate
+        value: "0.0"
       - key: Cors__AllowedOrigins__0
         value: https://sharepoint-sj6m.onrender.com
       - key: Cors__AllowedOrigins__1

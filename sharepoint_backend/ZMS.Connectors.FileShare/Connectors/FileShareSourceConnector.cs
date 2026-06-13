@@ -6,12 +6,15 @@ namespace ZMS.Connectors.FileShare.Connectors;
 
 public class FileShareSourceConnector : ISourceConnector
 {
+    private const int SharePointPathReviewThreshold = 350;
+    private static readonly char[] InvalidSharePointNameChars = ['"', '*', ':', '<', '>', '?', '|', '#', '%'];
+
     public ConnectionType SupportedConnectionType => ConnectionType.FileShare;
 
     public Task<ConnectionTestResult> TestConnectionAsync(ConnectionProfile connection, CancellationToken cancellationToken)
     {
         var path = ResolveRootPath(connection, connection.RootPath ?? connection.Url);
-        var exists = Directory.Exists(path);
+        var exists = Directory.Exists(ToIoPath(path));
 
         return Task.FromResult(new ConnectionTestResult
         {
@@ -25,7 +28,7 @@ public class FileShareSourceConnector : ISourceConnector
     public Task<IReadOnlyCollection<SiteInfo>> GetSitesAsync(ConnectionProfile connection, CancellationToken cancellationToken)
     {
         var path = ResolveRootPath(connection, connection.RootPath ?? connection.Url);
-        var name = Directory.Exists(path) ? new DirectoryInfo(path).Name : "File Share Root";
+        var name = Directory.Exists(ToIoPath(path)) ? new DirectoryInfo(ToIoPath(path)).Name : "File Share Root";
 
         IReadOnlyCollection<SiteInfo> sites =
         [
@@ -46,10 +49,11 @@ public class FileShareSourceConnector : ISourceConnector
         CancellationToken cancellationToken)
     {
         var rootPath = ResolveRootPath(connection, sourceLocation);
+        var rootIoPath = ToIoPath(rootPath);
 
         return await Task.Run<IReadOnlyCollection<LibraryInfo>>(() =>
         {
-            if (!Directory.Exists(rootPath))
+            if (!Directory.Exists(rootIoPath))
             {
                 return
                 [
@@ -57,12 +61,11 @@ public class FileShareSourceConnector : ISourceConnector
                 ];
             }
 
-            var libraries = Directory
-                .GetDirectories(rootPath)
+            var libraries = SafeEnumerateDirectories(rootIoPath)
                 .Select(directory =>
                 {
                     var directoryInfo = new DirectoryInfo(directory);
-                    var itemCount = Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories).Count();
+                    var itemCount = SafeEnumerateFiles(directory).Count();
 
                     return new LibraryInfo
                     {
@@ -76,7 +79,7 @@ public class FileShareSourceConnector : ISourceConnector
 
             if (libraries.Count == 0)
             {
-                libraries.Add(new LibraryInfo { Id = "root", Name = "Root Files", ItemCount = Directory.EnumerateFiles(rootPath).Count() });
+                libraries.Add(new LibraryInfo { Id = "root", Name = "Root Files", ItemCount = SafeEnumerateFiles(rootIoPath).Count() });
             }
 
             return (IReadOnlyCollection<LibraryInfo>)libraries;
@@ -91,10 +94,11 @@ public class FileShareSourceConnector : ISourceConnector
     {
         var rootPath = ResolveRootPath(connection, sourceLocation);
         var libraryPath = string.IsNullOrWhiteSpace(libraryName) ? rootPath : Path.Combine(rootPath, libraryName.Trim());
+        var libraryIoPath = ToIoPath(libraryPath);
 
         return await Task.Run<IReadOnlyCollection<FileItem>>(() =>
         {
-            if (!Directory.Exists(libraryPath))
+            if (!Directory.Exists(libraryIoPath))
             {
                 return
                 [
@@ -114,11 +118,14 @@ public class FileShareSourceConnector : ISourceConnector
                 ];
             }
 
-            return Directory
-                .EnumerateFiles(libraryPath, "*", SearchOption.AllDirectories)
+            return SafeEnumerateFiles(libraryIoPath)
                 .Select(path =>
                 {
                     var fileInfo = new FileInfo(path);
+                    var displayPath = StripExtendedPathPrefix(path);
+                    var displayLibraryPath = StripExtendedPathPrefix(libraryIoPath);
+                    var relativePath = Path.GetRelativePath(displayLibraryPath, displayPath).Replace('\\', '/');
+                    var invalidCharacters = GetInvalidSharePointCharacters(fileInfo.Name);
                     return new FileItem
                     {
                         Name = fileInfo.Name,
@@ -127,9 +134,15 @@ public class FileShareSourceConnector : ISourceConnector
                         ModifiedUtc = fileInfo.LastWriteTimeUtc,
                         Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                         {
-                            ["RelativePath"] = Path.GetRelativePath(libraryPath, path).Replace('\\', '/'),
+                            ["RelativePath"] = relativePath,
                             ["Extension"] = fileInfo.Extension,
-                            ["Folder"] = fileInfo.DirectoryName ?? string.Empty
+                            ["Folder"] = StripExtendedPathPrefix(fileInfo.DirectoryName ?? string.Empty),
+                            ["PathLength"] = displayPath.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            ["PathLengthRisk"] = (displayPath.Length > SharePointPathReviewThreshold).ToString(),
+                            ["InvalidSharePointCharacters"] = invalidCharacters,
+                            ["InvalidSharePointCharacterRisk"] = (!string.IsNullOrWhiteSpace(invalidCharacters)).ToString(),
+                            ["CreatedUtc"] = fileInfo.CreationTimeUtc.ToString("o"),
+                            ["ModifiedUtc"] = fileInfo.LastWriteTimeUtc.ToString("o")
                         }
                     };
                 })
@@ -143,10 +156,11 @@ public class FileShareSourceConnector : ISourceConnector
         MigrationItem item,
         CancellationToken cancellationToken)
     {
-        if (File.Exists(item.SourcePath))
+        var ioPath = ToIoPath(item.SourcePath);
+        if (File.Exists(ioPath))
         {
             Stream stream = new FileStream(
-                item.SourcePath,
+                ioPath,
                 FileMode.Open,
                 FileAccess.Read,
                 System.IO.FileShare.Read,
@@ -166,5 +180,89 @@ public class FileShareSourceConnector : ISourceConnector
         return string.IsNullOrWhiteSpace(connection.RootPath)
             ? sourceLocation
             : connection.RootPath;
+    }
+
+    private static IEnumerable<string> SafeEnumerateDirectories(string rootPath)
+    {
+        try
+        {
+            return Directory.EnumerateDirectories(rootPath).ToArray();
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or PathTooLongException)
+        {
+            return [];
+        }
+    }
+
+    private static IReadOnlyCollection<string> SafeEnumerateFiles(string rootPath)
+    {
+        var files = new List<string>();
+        var pending = new Stack<string>();
+        pending.Push(rootPath);
+
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(current))
+                {
+                    files.Add(file);
+                }
+
+                foreach (var directory in Directory.EnumerateDirectories(current))
+                {
+                    pending.Push(directory);
+                }
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or PathTooLongException)
+            {
+                continue;
+            }
+        }
+
+        return files;
+    }
+
+    private static string GetInvalidSharePointCharacters(string name)
+    {
+        var invalid = name
+            .Where(character => InvalidSharePointNameChars.Contains(character))
+            .Distinct()
+            .OrderBy(character => character)
+            .ToArray();
+
+        return invalid.Length == 0 ? string.Empty : string.Join(string.Empty, invalid);
+    }
+
+    private static string ToIoPath(string path)
+    {
+        if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(path) || path.StartsWith(@"\\?\", StringComparison.Ordinal))
+        {
+            return path;
+        }
+
+        var fullPath = Path.GetFullPath(path);
+        return fullPath.StartsWith(@"\\", StringComparison.Ordinal)
+            ? $@"\\?\UNC\{fullPath.TrimStart('\\')}"
+            : $@"\\?\{fullPath}";
+    }
+
+    private static string StripExtendedPathPrefix(string path)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return path;
+        }
+
+        if (path.StartsWith(@"\\?\UNC\", StringComparison.Ordinal))
+        {
+            return $@"\\{path[8..]}";
+        }
+
+        return path.StartsWith(@"\\?\", StringComparison.Ordinal)
+            ? path[4..]
+            : path;
     }
 }

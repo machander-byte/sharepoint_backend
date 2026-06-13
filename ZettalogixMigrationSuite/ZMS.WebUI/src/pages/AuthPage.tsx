@@ -69,11 +69,53 @@ export default function AuthPage(): JSX.Element {
 
   return (
     <main className={styles.authShell}>
+      <section className={styles.authHero} aria-label="ZMS validation summary">
+        <div className={styles.heroBrand}>
+          <div className={styles.brandMark}>Z</div>
+          <div>
+            <span>Zettalogix</span>
+            <strong>Migration Suite</strong>
+          </div>
+        </div>
+
+        <div>
+          <span className={styles.heroEyebrow}>UI V2 access</span>
+          <h1>Migration control plane</h1>
+          <p>
+            Sign in to review migration evidence, readiness, reports, governance, AI recommendations,
+            and internal safety limits.
+          </p>
+        </div>
+
+        <div className={styles.proofGrid}>
+          <div>
+            <strong>231/231</strong>
+            <span>Stage 1 files passed</span>
+          </div>
+          <div>
+            <strong>0</strong>
+            <span>Failed files</span>
+          </div>
+          <div>
+            <strong>0</strong>
+            <span>Retries</span>
+          </div>
+          <div>
+            <strong>46/46</strong>
+            <span>Backend tests</span>
+          </div>
+        </div>
+
+        <div className={styles.limitationNote}>
+          <strong>Known gap</strong>
+          <span>File migration integrity passed. Empty-folder preservation is a known gap.</span>
+        </div>
+      </section>
+
       <section className={styles.authPanel}>
-        <div className={styles.brandMark}>Z</div>
-        <span className="eyebrow">Secure Access</span>
-        <h1>Zettalogix Migration Suite</h1>
-        <p>Sign in with Google or request an email link to open the migration control plane.</p>
+        <span className={styles.panelEyebrow}>Secure access</span>
+        <h2>Sign in to ZMS</h2>
+        <p>Use Google or a verified email link to open the authenticated migration workspace.</p>
 
         <div className={styles.providerStack}>
           {providerLabels.map((item) => (

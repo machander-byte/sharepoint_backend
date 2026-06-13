@@ -2,6 +2,7 @@ using ZMS.Application.Contracts;
 using ZMS.Core.Enums;
 using ZMS.Core.Interfaces;
 using ZMS.Core.Models;
+using ZMS.Core.Security;
 
 namespace ZMS.Application.Services;
 
@@ -81,13 +82,61 @@ public class ConnectionService : IConnectionService
         return connection;
     }
 
+    public async Task<ConnectionProfile> UpdateAsync(Guid connectionId, CreateConnectionRequest request, string userId, CancellationToken cancellationToken)
+    {
+        ValidateRequest(request);
+
+        var connection = await _connectionRepository.GetByIdAsync(connectionId, userId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Connection '{connectionId}' was not found.");
+
+        var additionalSettings = new Dictionary<string, string>(request.AdditionalSettings, StringComparer.OrdinalIgnoreCase);
+        var url = request.Url.Trim();
+        var rootPath = string.IsNullOrWhiteSpace(request.RootPath) ? null : request.RootPath.Trim();
+
+        if (request.Type == ConnectionType.GoogleDrive)
+        {
+            var folderId = ResolveGoogleDriveFolderId(rootPath, url, additionalSettings);
+            var folderUrl = BuildGoogleDriveFolderUrl(folderId);
+
+            url = folderUrl;
+            rootPath = folderId;
+            additionalSettings[GoogleFolderIdKey] = folderId;
+            additionalSettings[GoogleFolderUrlKey] = folderUrl;
+        }
+
+        if (request.Type == ConnectionType.SharePointOnline)
+        {
+            additionalSettings[SharePointDocumentLibraryNameKey] =
+                additionalSettings[SharePointDocumentLibraryNameKey].Trim();
+        }
+
+        connection.Name = request.Name.Trim();
+        connection.Type = request.Type;
+        connection.Url = url;
+        connection.Username = request.Type == ConnectionType.GoogleDrive || string.IsNullOrWhiteSpace(request.Username)
+            ? null
+            : request.Username.Trim();
+        connection.Password = request.Type == ConnectionType.GoogleDrive ? null : _secretProtector.Protect(request.Password);
+        connection.ClientId = request.Type == ConnectionType.GoogleDrive || string.IsNullOrWhiteSpace(request.ClientId)
+            ? null
+            : request.ClientId.Trim();
+        connection.ClientSecret = request.Type == ConnectionType.GoogleDrive ? null : _secretProtector.Protect(request.ClientSecret);
+        connection.TenantId = request.Type == ConnectionType.GoogleDrive ? null : request.TenantId;
+        connection.RootPath = rootPath;
+        connection.AdditionalSettings = additionalSettings;
+        connection.UpdatedUtc = DateTimeOffset.UtcNow;
+
+        await _connectionRepository.UpdateAsync(connection, cancellationToken);
+        return connection;
+    }
+
     public async Task<ConnectionTestResult> TestConnectionAsync(Guid connectionId, string userId, CancellationToken cancellationToken)
     {
         var connection = await _connectionRepository.GetByIdAsync(connectionId, userId, cancellationToken)
             ?? throw new KeyNotFoundException($"Connection '{connectionId}' was not found.");
         var connectorConnection = connection.WithUnprotectedSecrets(_secretProtector);
 
-        return connection.Type switch
+        var result = connection.Type switch
         {
             ConnectionType.SharePointOnline => await _connectorResolver
                 .ResolveTarget(connectorConnection)
@@ -101,6 +150,9 @@ public class ConnectionService : IConnectionService
                 Message = $"No connector is available for '{connection.Type}'."
             }
         };
+
+        result.Message = SecretRedactor.Redact(result.Message);
+        return result;
     }
 
     private static void ValidateRequest(CreateConnectionRequest request)

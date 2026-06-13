@@ -19,10 +19,16 @@ public class MigrationJob
     public int BatchSize { get; set; } = 20;
     public int MaxRetryCount { get; set; } = 3;
     public JobStatus Status { get; set; } = JobStatus.Draft;
+    public EnterpriseJobState EnterpriseState { get; set; } = EnterpriseJobState.CREATED;
     public int TotalItems { get; set; }
     public int CompletedItems { get; set; }
     public int FailedItems { get; set; }
     public string? LastError { get; set; }
+    public string? FailureReason { get; set; }
+    public int RetryCount { get; set; }
+    public string? CorrelationId { get; set; }
+    public string? LeaseId { get; set; }
+    public DateTimeOffset? LeaseExpiresUtc { get; set; }
     public DateTimeOffset CreatedUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? StartedUtc { get; set; }
     public DateTimeOffset? FinishedUtc { get; set; }

@@ -24,6 +24,9 @@ export interface AppState {
   createJob: (input: CreateJobInput) => Promise<MigrationJob | null>;
   startJob: (id: string) => Promise<void>;
   pauseJob: (id: string) => Promise<void>;
+  resumeJob: (id: string) => Promise<void>;
+  cancelJob: (id: string) => Promise<void>;
+  retryJob: (id: string) => Promise<void>;
   createConnection: (input: CreateConnectionInput) => Promise<void>;
   testConnection: (id: string) => Promise<void>;
   deleteConnection: (id: string) => Promise<void>;
@@ -191,6 +194,81 @@ export const useAppStore = create<AppState>((set, get) => ({
             "Migration pause failed",
             error instanceof Error ? error.message : "The selected migration could not be paused."
           ),
+          ...state.notifications
+        ]
+      }));
+    } finally {
+      set((state) => ({ loading: { ...state.loading, jobsMutation: false } }));
+    }
+  },
+
+  resumeJob: async (id) => {
+    set((state) => ({ loading: { ...state.loading, jobsMutation: true } }));
+
+    try {
+      await api.resumeMigration(id);
+      const jobs = await api.getJobs();
+      set((state) => ({
+        jobs,
+        notifications: [
+          notification("success", "Migration resumed", "The selected migration has been requeued."),
+          ...state.notifications
+        ]
+      }));
+    } catch (error) {
+      set((state) => ({
+        notifications: [
+          notification("error", "Migration resume failed", error instanceof Error ? error.message : "The selected migration could not be resumed."),
+          ...state.notifications
+        ]
+      }));
+    } finally {
+      set((state) => ({ loading: { ...state.loading, jobsMutation: false } }));
+    }
+  },
+
+  cancelJob: async (id) => {
+    set((state) => ({ loading: { ...state.loading, jobsMutation: true } }));
+
+    try {
+      await api.cancelMigration(id);
+      const jobs = await api.getJobs();
+      set((state) => ({
+        jobs,
+        notifications: [
+          notification("info", "Migration cancelled", "The selected migration has been cancelled."),
+          ...state.notifications
+        ]
+      }));
+    } catch (error) {
+      set((state) => ({
+        notifications: [
+          notification("error", "Migration cancel failed", error instanceof Error ? error.message : "The selected migration could not be cancelled."),
+          ...state.notifications
+        ]
+      }));
+    } finally {
+      set((state) => ({ loading: { ...state.loading, jobsMutation: false } }));
+    }
+  },
+
+  retryJob: async (id) => {
+    set((state) => ({ loading: { ...state.loading, jobsMutation: true } }));
+
+    try {
+      await api.retryMigration(id);
+      const jobs = await api.getJobs();
+      set((state) => ({
+        jobs,
+        notifications: [
+          notification("success", "Migration retry queued", "The selected migration has been queued for retry."),
+          ...state.notifications
+        ]
+      }));
+    } catch (error) {
+      set((state) => ({
+        notifications: [
+          notification("error", "Migration retry failed", error instanceof Error ? error.message : "The selected migration could not be retried."),
           ...state.notifications
         ]
       }));

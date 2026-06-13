@@ -1,0 +1,138 @@
+{
+  "assessmentId": "sample-readiness-assessment",
+  "scanId": "sample-live-import-scan",
+  "generatedAt": "2026-05-29T00:00:00Z",
+  "status": "completed",
+  "readinessScore": 70,
+  "riskLevel": "Medium",
+  "summary": {
+    "blockers": 2,
+    "highRisks": 4,
+    "mediumRisks": 7,
+    "lowRisks": 3,
+    "remediationActions": 5,
+    "suggestedWaves": 4
+  },
+  "scoreBreakdown": {
+    "startingScore": 100,
+    "permissionPenalty": 5,
+    "metadataPenalty": 4,
+    "pathLengthPenalty": 0,
+    "largeFilePenalty": 2,
+    "restrictedContentPenalty": 3,
+    "archivedContentPenalty": 0,
+    "duplicateContentPenalty": 0,
+    "blockerPenalty": 18,
+    "finalScore": 70
+  },
+  "siteProfiles": [],
+  "libraryProfiles": [],
+  "riskFindings": [
+    {
+      "id": "risk-payroll-permissions",
+      "category": "Permissions",
+      "severity": "High",
+      "title": "Review unique permissions before migration",
+      "description": "Payroll Confidential has broken inheritance.",
+      "affectedLocation": "/sites/ZMS-HR-Portal/Payroll Confidential",
+      "affectedSite": "ZMS HR Portal",
+      "affectedLibrary": "Payroll Confidential",
+      "affectedPath": "/sites/ZMS-HR-Portal/Payroll Confidential",
+      "evidence": "Broken inheritance on restricted content",
+      "impact": "Blocks reliable migration planning until target security groups are validated.",
+      "recommendedAction": "Validate target SharePoint groups before migration.",
+      "canAutoRemediate": false,
+      "migrationBlocker": true
+    }
+  ],
+  "remediationActions": [
+    {
+      "id": "rem-permissions",
+      "priority": "High",
+      "category": "Permissions",
+      "actionTitle": "Review unique permissions before migration",
+      "actionDescription": "Validate target SharePoint groups for Payroll Confidential, Audit Records, and Security Runbooks.",
+      "affectedLocations": [
+        "/sites/ZMS-HR-Portal/Payroll Confidential",
+        "/sites/ZMS-Finance-Hub/Audit Records",
+        "/sites/ZMS-IT-Operations/Security Runbooks"
+      ],
+      "estimatedEffort": "High",
+      "ownerRole": "SharePoint Admin / Security Owner",
+      "status": "Open",
+      "dependsOn": [],
+      "expectedBenefit": "Reduces post-migration permission defects."
+    }
+  ],
+  "migrationWaves": [
+    {
+      "waveId": "wave-1",
+      "waveName": "Wave 1 - Low Risk Pilot",
+      "description": "Low-risk libraries for pilot validation.",
+      "recommendedOrder": 1,
+      "includedSites": ["ZMS Operations"],
+      "includedLibraries": ["Policies Archive", "Operational Reports"],
+      "excludedRisks": [],
+      "estimatedFiles": 180,
+      "estimatedStorage": 536870912,
+      "readinessScore": 92,
+      "riskLevel": "Low",
+      "prerequisites": []
+    },
+    {
+      "waveId": "wave-2",
+      "waveName": "Wave 2 - Business Content",
+      "description": "Medium-risk business libraries after metadata cleanup.",
+      "recommendedOrder": 2,
+      "includedSites": ["ZMS PMO"],
+      "includedLibraries": ["Project Documents", "Vendor Bills"],
+      "excludedRisks": [],
+      "estimatedFiles": 420,
+      "estimatedStorage": 1610612736,
+      "readinessScore": 78,
+      "riskLevel": "Moderate",
+      "prerequisites": ["Standardize metadata fields"]
+    },
+    {
+      "waveId": "wave-3",
+      "waveName": "Wave 3 - Restricted Content",
+      "description": "Permission-sensitive content after security owner review.",
+      "recommendedOrder": 3,
+      "includedSites": ["ZMS HR Portal", "ZMS Finance Hub"],
+      "includedLibraries": ["Payroll Confidential", "Audit Records", "Security Runbooks"],
+      "excludedRisks": ["Unvalidated target groups"],
+      "estimatedFiles": 221,
+      "estimatedStorage": 1664090112,
+      "readinessScore": 64,
+      "riskLevel": "Medium",
+      "prerequisites": ["Review unique permissions before migration"]
+    },
+    {
+      "waveId": "wave-4",
+      "waveName": "Wave 4 - Archive and Cleanup",
+      "description": "Archive-heavy or cleanup-dependent content.",
+      "recommendedOrder": 4,
+      "includedSites": ["ZMS Finance Hub"],
+      "includedLibraries": ["Tax Documents", "Compliance Records"],
+      "excludedRisks": ["Archive decision pending"],
+      "estimatedFiles": 465,
+      "estimatedStorage": 2147483648,
+      "readinessScore": 58,
+      "riskLevel": "High",
+      "prerequisites": ["Decide archive vs migrate strategy"]
+    }
+  ],
+  "modernizationOpportunities": [
+    {
+      "id": "mod-policy-review",
+      "type": "Workflow Modernization",
+      "sourceName": "Policy Review Tracker",
+      "location": "ZMS Operations",
+      "potentialTarget": "Power Automate reminder workflow",
+      "rationale": "Name indicates review workflow behavior.",
+      "estimatedEffort": "Medium"
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}

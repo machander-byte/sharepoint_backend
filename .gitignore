@@ -1,0 +1,42 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Node/Vite output
+node_modules/
+dist/
+build/
+
+# .NET output
+bin/
+obj/
+.codex-run/
+
+# Runtime databases and app output
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+sharepoint_backend/ZMS.API/App_Data/
+sharepoint_backend/test-artifacts/
+sharepoint_backend/_test_extract_*/
+sharepoint_backend/zms-sharepoint-environment-package-*.zip
+sharepoint_backend/test-package-response.json
+
+# Generated demos, screenshots, and browser artifacts
+.playwright-mcp/
+test-artifacts/
+zms-*.png
+test-artifacts/**/*.webm
+zms-report.csv
+zms-sharepoint-environment-package-*.zip
+*.pid
+
+# IDE / OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.vs/

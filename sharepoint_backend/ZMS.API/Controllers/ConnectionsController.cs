@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ZMS.API.Contracts;
 using ZMS.API.Contracts.Connections;
 using ZMS.API.Extensions;
+using ZMS.API.Security;
 using ZMS.Application.Contracts;
 
 namespace ZMS.API.Controllers;
@@ -28,7 +29,7 @@ public class ConnectionsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Operator)]
     public async Task<ActionResult<ConnectionResponseDto>> Create(
         [FromBody] CreateConnectionRequestDto request,
         CancellationToken cancellationToken)
@@ -45,8 +46,31 @@ public class ConnectionsController : ControllerBase
         }
     }
 
+    [HttpPut("{connectionId:guid}")]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Operator)]
+    public async Task<ActionResult<ConnectionResponseDto>> Update(
+        Guid connectionId,
+        [FromBody] CreateConnectionRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = User.GetUserId();
+            var connection = await _connectionService.UpdateAsync(connectionId, request.ToApplicationRequest(), userId, cancellationToken);
+            return Ok(connection.ToResponse());
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
     [HttpPost("{connectionId:guid}/test")]
-    [Authorize]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Operator)]
     public async Task<ActionResult<ConnectionTestResponseDto>> Test(Guid connectionId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -55,7 +79,7 @@ public class ConnectionsController : ControllerBase
     }
 
     [HttpDelete("{connectionId:guid}")]
-    [Authorize]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Admin)]
     public async Task<IActionResult> Delete(Guid connectionId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();

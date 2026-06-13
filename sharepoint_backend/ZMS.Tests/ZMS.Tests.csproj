@@ -17,9 +17,11 @@
   <ItemGroup>
     <ProjectReference Include="..\ZMS.API\ZMS.API.csproj" />
     <ProjectReference Include="..\ZMS.Application\ZMS.Application.csproj" />
+    <ProjectReference Include="..\ZMS.Connectors.FileShare\ZMS.Connectors.FileShare.csproj" />
     <ProjectReference Include="..\ZMS.Connectors.GoogleDrive\ZMS.Connectors.GoogleDrive.csproj" />
     <ProjectReference Include="..\ZMS.Core\ZMS.Core.csproj" />
     <ProjectReference Include="..\ZMS.Infrastructure\ZMS.Infrastructure.csproj" />
+    <ProjectReference Include="..\ZMS.MigrationEngine\ZMS.MigrationEngine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

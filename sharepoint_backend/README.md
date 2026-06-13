@@ -1,6 +1,6 @@
-# Zettalogix Migration Suite Backend
+# zettalogixmigrationsuite Backend
 
-This repository contains the backend service for Zettalogix Migration Suite.
+This repository contains the backend service for zettalogixmigrationsuite.
 
 It includes:
 
@@ -20,9 +20,9 @@ dotnet restore .\Zettalogix.MigrationSuite.sln
 dotnet build .\Zettalogix.MigrationSuite.sln
 
 $env:ASPNETCORE_URLS = "http://localhost:5206"
-$env:Database__Provider = "Sqlite"
-$env:ConnectionStrings__ZmsDatabase = "Data Source=.codex-run/local-dev.db"
-$env:DataProtection__KeyRingPath = ".codex-run/keys"
+$env:Database__Provider = "Postgres"
+$env:ConnectionStrings__ZmsDatabase = "Host=your-supabase-pooler-host;Port=5432;Database=postgres;Username=postgres.your-project-ref;Password=your-password;SSL Mode=Require;Trust Server Certificate=true"
+$env:DataProtection__KeyStorage = "Database"
 $env:Cors__AllowedOrigins__0 = "http://localhost:5173"
 dotnet run --project .\ZMS.API\ZMS.API.csproj
 ```
@@ -45,7 +45,7 @@ When the API restarts, queued/running jobs are re-queued and in-progress items a
 
 ## Supabase Postgres
 
-The backend supports `Sqlite`, `SqlServer`, and `Postgres`. For Supabase, configure these on the backend host:
+The backend runtime is configured for Supabase Postgres. Configure these on the backend host:
 
 ```text
 Database__Provider=Postgres
@@ -53,6 +53,8 @@ ConnectionStrings__ZmsDatabase=Host=your-supabase-pooler-host;Port=5432;Database
 ```
 
 Use the Supabase Session pooler for long-running ASP.NET Core deployments unless your host supports direct IPv6 database connections.
+
+Do not commit the real Supabase database password. Put `ConnectionStrings__ZmsDatabase` in Render environment variables, local PowerShell environment variables, or .NET user secrets.
 
 ## Production Secrets
 
@@ -63,11 +65,36 @@ GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET
 GOOGLE_REFRESH_TOKEN
 ConnectionStrings__ZmsDatabase
-DataProtection__KeyRingPath
+DataProtection__KeyStorage
 Cors__AllowedOrigins__0
+Sentry__Dsn
 ```
 
 Do not put backend secrets in frontend `.env` files.
+
+Use `DataProtection__KeyStorage=Database` on ephemeral hosts such as Render free services. If you choose filesystem key storage instead, set `DataProtection__KeyRingPath` to a durable folder shared by every API/worker instance. Do not point the key ring at `/tmp`, because losing those keys makes existing saved connection secrets unreadable.
+
+## Security And Monitoring
+
+Public operational endpoints:
+
+```text
+GET /api/health
+GET /api/version
+GET /api/status
+```
+
+All other API routes require Supabase JWT authentication. The backend supports `Viewer`, `Operator`, and `Admin` role checks. Set `Authorization__EnforceRoles=true` after adding role claims to Supabase user metadata or app metadata.
+
+Role hierarchy:
+
+```text
+Viewer: read dashboards, discovery results, plans, reports, validation, status.
+Operator: Viewer plus create/import/analyze/plan/execute/retry workflow actions.
+Admin: Operator plus destructive/admin demo and connection delete actions.
+```
+
+Structured request logging is enabled with correlation IDs and without request bodies, query strings, headers, or tokens. Sentry is optional and activates only when `Sentry__Dsn` or `SENTRY_DSN` is configured.
 
 ## Render Deployment
 
@@ -79,3 +106,5 @@ When deploying to Render with the `render.yaml` configuration, you **must manual
 4. For Supabase: `Host=your-supabase-pooler-host;Port=5432;Database=postgres;Username=postgres.your-project-ref;Password=your-password;SSL Mode=Require;Trust Server Certificate=true`
 
 This variable is marked `sync: false` to prevent the password from being committed to git. The deployment will fail with a clear error if this environment variable is not configured.
+
+The Render blueprint sets `DataProtection__KeyStorage=Database` so ASP.NET Core Data Protection keys are stored in the configured database. If a previous deployment used `/tmp/dataprotection-keys`, redeploying fixes future secrets, but connections saved with the lost key ring must be recreated.

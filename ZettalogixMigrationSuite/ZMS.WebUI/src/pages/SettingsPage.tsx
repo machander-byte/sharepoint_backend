@@ -1,99 +1,51 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useAppStore } from "../hooks/useAppStore";
+import { Bot, FileDown, KeyRound, Settings2, ShieldCheck, Users } from "lucide-react";
+import PageHeader from "../components/PageHeader";
+
+const sections = [
+  { title: "Tenant Configuration", icon: Settings2, fields: ["Default tenant", "Target site prefix", "Workspace region"] },
+  { title: "Microsoft Graph Permissions", icon: KeyRound, fields: ["Sites.Read.All", "Files.ReadWrite.All", "Group.Read.All"] },
+  { title: "Default Migration Options", icon: ShieldCheck, fields: ["Preserve permissions", "Preserve metadata", "Include versions"] },
+  { title: "Report Export Settings", icon: FileDown, fields: ["Default format", "Include raw JSON", "Retention window"] },
+  { title: "AI Settings", icon: Bot, fields: ["Recommendation confidence threshold", "Metadata suggestions", "Modernization analysis"] },
+  { title: "User & Role Management", icon: Users, fields: ["Migration Lead", "Report Viewer", "Environment Admin"] }
+];
 
 export default function SettingsPage(): JSX.Element {
-  const settings = useAppStore((state) => state.settings);
-  const saveSettings = useAppStore((state) => state.saveSettings);
-  const loading = useAppStore((state) => state.loading.settings);
-
-  const initial = useMemo(
-    () =>
-      settings ?? {
-        concurrency: 4,
-        retryLimit: 3,
-        notifyOnFailure: true,
-        telemetryEnabled: false
-      },
-    [settings]
-  );
-
-  const [form, setForm] = useState(initial);
-
-  useEffect(() => {
-    setForm(initial);
-  }, [initial]);
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    await saveSettings(form);
-  };
-
   return (
-    <section className="split-panel">
-      <article className="surface-card">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">Runtime Controls</span>
-            <h2>Execution defaults</h2>
-            <p>These values drive worker behavior, retries, and notifications for the starter migration control plane.</p>
-          </div>
-        </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Settings" subtitle="Configure tenant defaults, permissions, reports, AI options, and user roles." />
 
-        <form className="form-grid" onSubmit={submit}>
-          <label>
-            Parallel workers
-            <input
-              type="number"
-              value={form.concurrency}
-              onChange={(event) => setForm({ ...form, concurrency: Number(event.target.value) || 1 })}
-            />
-          </label>
-          <label>
-            Retry limit
-            <input
-              type="number"
-              value={form.retryLimit}
-              onChange={(event) => setForm({ ...form, retryLimit: Number(event.target.value) || 0 })}
-            />
-          </label>
-          <label className="checkbox-field full-width">
-            <input
-              type="checkbox"
-              checked={form.notifyOnFailure}
-              onChange={(event) => setForm({ ...form, notifyOnFailure: event.target.checked })}
-            />
-            Send notifications when migrations fail
-          </label>
-          <label className="checkbox-field full-width">
-            <input
-              type="checkbox"
-              checked={form.telemetryEnabled}
-              onChange={(event) => setForm({ ...form, telemetryEnabled: event.target.checked })}
-            />
-            Enable anonymous telemetry
-          </label>
-          <div className="form-actions full-width">
-            <button type="submit" className="primary-button" disabled={loading}>
-              {loading ? "Saving..." : "Save settings"}
-            </button>
-          </div>
-        </form>
-      </article>
-
-      <article className="tonal-card">
-        <div className="page-stack">
-          <div className="metric-box">
-            <span>Concurrency</span>
-            <strong>{form.concurrency}</strong>
-            <p>Higher values increase parallel batch processing pressure in the migration engine.</p>
-          </div>
-          <div className="metric-box">
-            <span>Retry policy</span>
-            <strong>{form.retryLimit}</strong>
-            <p>Failed file operations can be re-queued this many times before being surfaced in reporting.</p>
-          </div>
-        </div>
-      </article>
-    </section>
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {sections.map((section) => {
+          const Icon = section.icon;
+          return (
+            <article key={section.title} className="rounded-xl border border-border bg-surface p-5 shadow-card">
+              <div className="mb-5 flex items-center gap-3 border-b border-border pb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h2 className="font-bold text-text-primary">{section.title}</h2>
+              </div>
+              <div className="space-y-4">
+                {section.fields.map((field, index) => (
+                  <label key={field} className="block">
+                    <span className="mb-2 block text-sm font-semibold text-text-muted">{field}</span>
+                    {index === 0 ? (
+                      <input className="w-full rounded-lg border border-border px-3 py-2" defaultValue={field.includes("tenant") ? "zettalogix.sharepoint.com" : "Enabled"} />
+                    ) : (
+                      <select className="w-full rounded-lg border border-border px-3 py-2" defaultValue="Enabled">
+                        <option>Enabled</option>
+                        <option>Disabled</option>
+                        <option>Review Required</option>
+                      </select>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </article>
+          );
+        })}
+      </section>
+    </div>
   );
 }

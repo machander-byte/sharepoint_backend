@@ -1,374 +1,200 @@
-import { FormEvent, useMemo, useState } from "react";
-import ConnectionCard from "../components/ConnectionCard/ConnectionCard";
-import ConfirmDialog from "../components/ConfirmDialog/ConfirmDialog";
-import EmptyState from "../components/EmptyState/EmptyState";
-import GoogleDriveFolderPicker, { GoogleDriveFolderSelection } from "../components/google/GoogleDriveFolderPicker";
-import { useAppStore } from "../hooks/useAppStore";
-import { formatConnectionType } from "../utils/formatters";
-import { ConnectionType, CreateConnectionInput } from "../utils/models";
+import { Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import ConnectionCard from "../components/ConnectionCard";
+import ConnectionModal from "../components/ConnectionModal";
+import PageHeader from "../components/PageHeader";
+import PermissionGuidanceModal from "../components/PermissionGuidanceModal";
+import { ConnectionInput, zmsApi } from "../services/zmsApi";
+import { useZmsDispatch, useZmsState } from "../state/ZmsStateProvider";
+import { toastActions } from "../state/toastActions";
+import { Connection } from "../types/zms";
 
-const initialForm: CreateConnectionInput = {
-  name: "",
-  type: "GoogleDrive",
-  url: "",
-  rootPath: "",
-  folderId: "",
-  folderUrl: "",
-  folderName: "",
-  username: "",
-  password: "",
-  clientId: "",
-  clientSecret: "",
-  tenantId: "",
-  documentLibraryName: ""
-};
+const filters = ["All", "Source", "Target", "Connected", "Warning", "Disconnected", "Config Required"] as const;
+type ConnectionFilter = (typeof filters)[number];
 
-function getEndpointLabel(type: ConnectionType): string {
-  switch (type) {
-    case "SharePointOnline":
-      return "SharePoint site URL";
-    case "SharePointOnPrem":
-      return "SharePoint source URL";
-    case "FileShare":
-      return "File share path or UNC";
-    case "GoogleDrive":
-      return "Google Drive folder URL or ID";
-    default:
-      return "Endpoint";
-  }
-}
-
-function extractGoogleDriveFolderId(candidate: string): string {
-  const trimmed = candidate.trim();
-  if (!trimmed) {
-    return "";
-  }
-
-  const folderMatch = trimmed.match(/\/drive\/(?:u\/\d+\/)?folders\/([A-Za-z0-9_-]+)/i);
-  if (folderMatch?.[1]) {
-    return folderMatch[1];
-  }
-
-  return /^[A-Za-z0-9_-]{10,}$/.test(trimmed) ? trimmed : "";
-}
-
-function buildGoogleDriveFolderUrl(folderId: string): string {
-  return `https://drive.google.com/drive/folders/${folderId}`;
-}
-
-function isValidGoogleDriveFolderUrlOrId(candidate: string): boolean {
-  return Boolean(extractGoogleDriveFolderId(candidate));
-}
-
-function validateConnection(form: CreateConnectionInput): string | null {
-  if (!form.name.trim()) {
-    return "Connection name is required.";
-  }
-
-  if (form.type === "GoogleDrive") {
-    const folderId = form.folderId.trim() || extractGoogleDriveFolderId(form.folderUrl);
-
-    if (!folderId && !form.folderUrl.trim()) {
-      return "Google Drive folder link is required.";
-    }
-
-    if (form.folderUrl.trim() && !isValidGoogleDriveFolderUrlOrId(form.folderUrl)) {
-      return "Paste a valid Google Drive folder link.";
-    }
-
-  }
-
-  if (form.type === "SharePointOnline") {
-    if (!form.url.trim()) {
-      return "SharePoint site URL is required.";
-    }
-
-    if (!form.tenantId.trim()) {
-      return "Microsoft Entra tenant ID is required.";
-    }
-
-    if (!form.clientId.trim()) {
-      return "Microsoft Entra client ID is required.";
-    }
-
-    if (!form.clientSecret.trim()) {
-      return "Microsoft Entra client secret is required.";
-    }
-
-    if (!form.documentLibraryName.trim()) {
-      return "SharePoint document library name is required.";
+function messageFromError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error && "details" in error) {
+    const details = (error as { details?: unknown }).details;
+    if (typeof details === "string") return details;
+    if (typeof details === "object" && details && "title" in details) {
+      return String((details as { title?: unknown }).title);
     }
   }
-
-  return null;
+  return "The backend request failed.";
 }
 
 export default function ConnectionsPage(): JSX.Element {
-  const connections = useAppStore((state) => state.connections);
-  const createConnection = useAppStore((state) => state.createConnection);
-  const testConnection = useAppStore((state) => state.testConnection);
-  const deleteConnection = useAppStore((state) => state.deleteConnection);
-  const loading = useAppStore((state) => state.loading.connectionsMutation);
-  const [form, setForm] = useState<CreateConnectionInput>(initialForm);
-  const [formMessage, setFormMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const { connections } = useZmsState();
+  const dispatch = useZmsDispatch();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState<ConnectionFilter>("All");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [guidanceOpen, setGuidanceOpen] = useState(false);
+  const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    const validationError = validateConnection(form);
-    if (validationError) {
-      setFormMessage({ tone: "error", text: validationError });
+  const loadConnections = async () => {
+    setLoading(true);
+    setLoadError("");
+    try {
+      const nextConnections = await zmsApi.getConnections();
+      dispatch({ type: "SET_CONNECTIONS", payload: nextConnections });
+    } catch (error) {
+      const message = messageFromError(error);
+      setLoadError(message);
+      dispatch({ type: "ADD_TOAST", payload: toastActions.error("Connections failed to load", message) });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadConnections();
+  }, []);
+
+  const filteredConnections = useMemo(() => {
+    const normalized = searchTerm.trim().toLowerCase();
+    return connections.filter((connection) => {
+      const matchesSearch = !normalized || [connection.name, connection.provider, connection.tenant, connection.status, connection.kind]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalized));
+
+      const matchesFilter =
+        filter === "All" ||
+        connection.kind === filter ||
+        connection.status === filter;
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [connections, filter, searchTerm]);
+
+  const openNewConnection = () => {
+    setEditingConnection(null);
+    setModalOpen(true);
+  };
+
+  const saveConnection = async (input: ConnectionInput) => {
+    const connection = await zmsApi.createConnection(input);
+    dispatch({ type: "UPSERT_CONNECTION", payload: connection });
+    dispatch({ type: "ADD_TOAST", payload: toastActions.success("Connection saved", `${connection.name} was saved to the backend.`) });
+  };
+
+  const testConnection = async (connection: Connection) => {
+    try {
+      const result = await zmsApi.testConnection(connection.id);
+      dispatch({
+        type: "UPDATE_CONNECTION",
+        payload: {
+          id: connection.id,
+          patch: {
+            status: result.status,
+            warning: result.status === "Warning" ? result.message : undefined,
+            message: result.status === "Connected" ? result.message : connection.message,
+            actions: result.status === "Warning" ? ["Fix Permissions", "Configure", "Test"] : ["Test", "Configure"]
+          }
+        }
+      });
+      dispatch({
+        type: "ADD_TOAST",
+        payload: result.status === "Connected"
+          ? toastActions.success("Connection test passed", result.message)
+          : toastActions.warning("Connection test warning", result.message)
+      });
+    } catch (error) {
+      const message = messageFromError(error);
+      dispatch({ type: "ADD_TOAST", payload: toastActions.error("Connection test failed", message) });
+    }
+  };
+
+  const handleAction = (action: string, connection: Connection) => {
+    if (action === "Configure") {
+      setEditingConnection(connection);
+      setModalOpen(true);
       return;
     }
-
-    try {
-      await createConnection(form);
-      setForm(initialForm);
-      setFormMessage(null);
-    } catch (error) {
-      setFormMessage({
-        tone: "error",
-        text: error instanceof Error ? error.message : "Connection could not be saved."
-      });
+    if (action === "Test") {
+      void testConnection(connection);
+      return;
     }
-  };
-
-  const selectGoogleFolder = (folder: GoogleDriveFolderSelection) => {
-    const folderUrl = folder.url || buildGoogleDriveFolderUrl(folder.id);
-    setForm({
-      ...form,
-      url: folderUrl,
-      rootPath: folder.id,
-      folderId: folder.id,
-      folderUrl,
-      folderName: folder.name
-    });
-    setFormMessage({ tone: "success", text: "Folder selected successfully." });
-  };
-
-  const updateGoogleFolderUrl = (folderUrl: string) => {
-    const folderId = extractGoogleDriveFolderId(folderUrl);
-    setForm({
-      ...form,
-      url: folderUrl,
-      folderUrl,
-      folderId: folderId || form.folderId,
-      rootPath: folderId || form.rootPath,
-      folderName: folderId ? form.folderName : ""
-    });
-    setFormMessage(null);
-  };
-
-  const typeSummary = useMemo(() => {
-    switch (form.type) {
-      case "GoogleDrive":
-        return "Paste a Google Drive folder link. The backend uses configured Google credentials for migration.";
-      case "SharePointOnline":
-        return "Use Microsoft Entra application credentials so the backend can upload to SharePoint Online libraries.";
-      case "FileShare":
-        return "Point the worker at a local or network-accessible file share path.";
-      case "SharePointOnPrem":
-        return "Register the legacy SharePoint endpoint for source discovery and migration planning.";
-      default:
-        return "Register a reusable migration endpoint.";
+    if (action === "Fix Permissions") {
+      setGuidanceOpen(true);
+      return;
     }
-  }, [form.type]);
-  const deleteTargetName = useMemo(
-    () => connections.find((connection) => connection.id === deleteTarget)?.name ?? "",
-    [connections, deleteTarget]
-  );
+    dispatch({ type: "ADD_TOAST", payload: toastActions.info("Mock action unavailable", `${action} will be connected in a later phase.`) });
+  };
 
   return (
-    <>
-    <div className="page-stack">
-      <section className="split-panel">
-        <article className="surface-card">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">Register Gateway</span>
-              <h2>Add source or destination connection</h2>
-              <p>Store reusable endpoints with the credentials needed for real discovery, validation, and direct transfer.</p>
-            </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Connections"
+        subtitle="Create, load, and test backend-backed source and target connection profiles."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-bold text-text-primary hover:bg-surface-container" onClick={() => void loadConnections()}>
+              Refresh
+            </button>
+            <button type="button" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90" onClick={openNewConnection}>
+              <Plus className="h-4 w-4" />
+              New Connection
+            </button>
           </div>
+        }
+      />
 
-          <form className="form-grid" onSubmit={submit}>
-            <label>
-              Connection name
-              <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-            </label>
-            <label>
-              Type
-              <select
-                value={form.type}
-                onChange={(event) => {
-                  setForm({ ...form, type: event.target.value as ConnectionType });
-                  setFormMessage(null);
-                }}
-              >
-                <option value="GoogleDrive">Google Drive</option>
-                <option value="SharePointOnline">SharePoint Online</option>
-                <option value="FileShare">File Share</option>
-                <option value="SharePointOnPrem">SharePoint On-Prem</option>
-              </select>
-            </label>
+      {loading ? (
+        <div className="rounded-xl border border-border bg-surface p-4 text-sm text-text-muted shadow-card">
+          Loading backend connections...
+        </div>
+      ) : null}
 
-            {form.type === "GoogleDrive" ? (
-              <>
-                <div className="form-note full-width">
-                  <strong>Google Drive Folder Link</strong>
-                  <p>Paste the Google Drive folder link you want to migrate.</p>
-                </div>
-                <div className="full-width">
-                  <GoogleDriveFolderPicker onFolderSelected={selectGoogleFolder} disabled={loading} />
-                </div>
-                <label className="full-width">
-                  Google Drive Folder Link
-                  <input
-                    value={form.folderUrl}
-                    placeholder="https://drive.google.com/drive/folders/..."
-                    onChange={(event) => updateGoogleFolderUrl(event.target.value)}
-                  />
-                </label>
-                {form.folderName ? (
-                  <div className="selected-folder full-width">
-                    <span className="material-symbols-outlined">folder</span>
-                    <div>
-                      <strong>{form.folderName}</strong>
-                      <p>{form.folderUrl}</p>
-                    </div>
-                  </div>
-                ) : null}
-              </>
-            ) : form.type !== "SharePointOnline" ? (
-              <label className="full-width">
-                {getEndpointLabel(form.type)}
-                <input value={form.url} onChange={(event) => setForm({ ...form, url: event.target.value })} />
-              </label>
-            ) : null}
+      {loadError ? (
+        <div className="rounded-xl border border-error/25 bg-error-soft/70 p-4 text-sm text-error">
+          {loadError}
+        </div>
+      ) : null}
 
-            {form.type === "FileShare" ? (
-              <label className="full-width">
-                Root path override
-                <input
-                  placeholder="Optional if the endpoint field already contains the share path"
-                  value={form.rootPath}
-                  onChange={(event) => setForm({ ...form, rootPath: event.target.value })}
-                />
-              </label>
-            ) : null}
-
-            {form.type === "SharePointOnPrem" ? (
-              <>
-                <label>
-                  Username
-                  <input value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} />
-                </label>
-                <label>
-                  Password
-                  <input
-                    type="password"
-                    value={form.password}
-                    onChange={(event) => setForm({ ...form, password: event.target.value })}
-                  />
-                </label>
-              </>
-            ) : null}
-
-            {form.type === "SharePointOnline" ? (
-              <>
-                <label>
-                  Tenant ID
-                  <input value={form.tenantId} onChange={(event) => setForm({ ...form, tenantId: event.target.value })} />
-                </label>
-                <label>
-                  Client ID
-                  <input value={form.clientId} onChange={(event) => setForm({ ...form, clientId: event.target.value })} />
-                </label>
-                <label className="full-width">
-                  SharePoint Site URL
-                  <input value={form.url} onChange={(event) => setForm({ ...form, url: event.target.value })} />
-                </label>
-                <label className="full-width">
-                  Client secret
-                  <input
-                    type="password"
-                    value={form.clientSecret}
-                    onChange={(event) => setForm({ ...form, clientSecret: event.target.value })}
-                  />
-                </label>
-                <label className="full-width">
-                  Document Library Name
-                  <input
-                    placeholder="Example: Documents or Shared Documents"
-                    value={form.documentLibraryName}
-                    onChange={(event) => setForm({ ...form, documentLibraryName: event.target.value })}
-                  />
-                </label>
-              </>
-            ) : null}
-
-            {form.type === "GoogleDrive" ? (
-              <p className="inline-message full-width">
-                Google authentication is configured on the backend. This screen only needs the source folder link.
-              </p>
-            ) : null}
-
-            {formMessage ? (
-              <p className={`inline-message ${formMessage.tone} full-width`}>{formMessage.text}</p>
-            ) : null}
-
-            <div className="form-actions full-width">
-              <button type="submit" className="primary-button" disabled={loading}>
-                {loading ? "Saving..." : "Save connection"}
-              </button>
-            </div>
-          </form>
-        </article>
-
-        <article className="tonal-card">
-          <div className="page-stack">
-            <div className="metric-box">
-              <span>Connection mode</span>
-              <strong>{formatConnectionType(form.type)}</strong>
-              <p>{typeSummary}</p>
-            </div>
-            <div className="metric-box">
-              <span>Registered gateways</span>
-              <strong>{connections.length}</strong>
-              <p>Available for discovery, target validation, and job creation from the migration wizard.</p>
-            </div>
-          </div>
-        </article>
+      <section className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 shadow-card">
+          <Search className="h-4 w-4 text-text-muted" />
+          <input
+            className="w-full bg-transparent text-sm text-text-primary placeholder:text-text-subtle"
+            placeholder="Search connections..."
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {filters.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={filter === item
+                ? "shrink-0 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-white"
+                : "shrink-0 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-bold text-text-primary hover:bg-surface-container"}
+              onClick={() => setFilter(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
       </section>
 
-      {connections.length === 0 ? (
-        <EmptyState title="No connections available" description="Register a source or target endpoint to begin." />
-      ) : (
-        <section className="card-grid">
-          {connections.map((connection) => (
-            <ConnectionCard
-              key={connection.id}
-              connection={connection}
-              onTest={(id) => void testConnection(id)}
-              onDelete={setDeleteTarget}
-            />
-          ))}
-        </section>
-      )}
-    </div>
-      <ConfirmDialog
-        isOpen={Boolean(deleteTarget)}
-        title="Delete connection?"
-        description={`Remove "${deleteTargetName}" from your workspace. Existing job history remains available, but new migrations cannot use this connection.`}
-        confirmLabel="Delete connection"
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          if (deleteTarget) {
-            void deleteConnection(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {filteredConnections.map((connection) => (
+          <ConnectionCard key={connection.id} connection={connection} onAction={handleAction} />
+        ))}
+      </section>
+
+      <ConnectionModal
+        isOpen={modalOpen}
+        connection={editingConnection}
+        onClose={() => setModalOpen(false)}
+        onSave={saveConnection}
       />
-    </>
+      <PermissionGuidanceModal isOpen={guidanceOpen} onClose={() => setGuidanceOpen(false)} />
+    </div>
   );
 }

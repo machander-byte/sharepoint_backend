@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ConfirmDialog from "../components/ConfirmDialog/ConfirmDialog";
 import FormWizard from "../components/FormWizard/FormWizard";
 import JobTable from "../components/JobTable/JobTable";
@@ -12,6 +12,10 @@ export default function MigrationsPage(): JSX.Element {
   const createJob = useAppStore((state) => state.createJob);
   const startJob = useAppStore((state) => state.startJob);
   const pauseJob = useAppStore((state) => state.pauseJob);
+  const resumeJob = useAppStore((state) => state.resumeJob);
+  const cancelJob = useAppStore((state) => state.cancelJob);
+  const retryJob = useAppStore((state) => state.retryJob);
+  const bootstrap = useAppStore((state) => state.bootstrap);
   const loading = useAppStore((state) => state.loading.jobsMutation);
 
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -21,8 +25,12 @@ export default function MigrationsPage(): JSX.Element {
 
   const pauseJobName = useMemo(() => jobs.find((job) => job.id === pauseTarget)?.name ?? "", [jobs, pauseTarget]);
   const runningJobs = jobs.filter((job) => job.status === "Running");
-  const completedJobs = jobs.filter((job) => job.status === "Completed" || job.status === "CompletedWithErrors");
   const failedJobs = jobs.filter((job) => job.status === "Failed");
+  const pausedJobs = jobs.filter((job) => job.status === "Paused");
+
+  useEffect(() => {
+    void bootstrap();
+  }, [bootstrap]);
 
   return (
     <>
@@ -41,9 +49,9 @@ export default function MigrationsPage(): JSX.Element {
               <p>Jobs actively processing source files into SharePoint Online.</p>
             </div>
             <div className="metric-box">
-              <span>Completed</span>
-              <strong>{completedJobs.length}</strong>
-              <p>Finished workloads that can move into reporting.</p>
+              <span>Paused / failed</span>
+              <strong>{pausedJobs.length + failedJobs.length}</strong>
+              <p>Jobs requiring operator attention before the next processing wave.</p>
             </div>
           </div>
         </article>
@@ -82,7 +90,14 @@ export default function MigrationsPage(): JSX.Element {
             <p>The queue reflects the current API state and stays in sync through the polling store.</p>
           </div>
         </div>
-        <JobTable jobs={jobs} onStart={(id) => void startJob(id)} onPause={(id) => setPauseTarget(id)} />
+        <JobTable
+          jobs={jobs}
+          onStart={(id) => void startJob(id)}
+          onPause={(id) => setPauseTarget(id)}
+          onResume={(id) => void resumeJob(id)}
+          onCancel={(id) => void cancelJob(id)}
+          onRetry={(id) => void retryJob(id)}
+        />
       </section>
 
       <FormWizard

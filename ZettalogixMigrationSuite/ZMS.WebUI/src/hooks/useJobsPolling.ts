@@ -10,7 +10,7 @@ export function useJobsPolling(enabled = true, intervalMs = 1800): void {
     }
 
     const timerId = window.setInterval(() => {
-      void refreshJobs();
+      void refreshJobs().catch(() => undefined);
     }, intervalMs);
 
     return () => window.clearInterval(timerId);
