@@ -1,0 +1,67 @@
+{
+  "planId": "sample-migration-plan",
+  "assessmentId": "sample-readiness-assessment",
+  "scanId": "sample-live-import-scan",
+  "planName": "ZMS SharePoint Migration Draft Plan",
+  "description": "Planning-only migration plan generated from readiness assessment.",
+  "status": "draft",
+  "createdAt": "2026-05-29T00:00:00Z",
+  "updatedAt": "2026-05-29T00:00:00Z",
+  "createdBy": "ZMS Planner",
+  "sourceEnvironment": "ZMS SharePoint test tenant",
+  "targetEnvironment": "Target SharePoint Online",
+  "waves": [
+    {
+      "waveId": "wave-1",
+      "waveName": "Wave 1 - Low Risk Pilot",
+      "order": 1,
+      "description": "Low-risk pilot validation wave.",
+      "riskLevel": "Low",
+      "readinessScore": 92,
+      "includedItems": [
+        {
+          "itemId": "item-policies-archive",
+          "siteCollection": "ZMS Operations",
+          "library": "Policies Archive",
+          "path": "Policies Archive",
+          "itemType": "Library",
+          "sourceUrl": "/sites/ZMS-Operations/Policies Archive",
+          "targetUrl": "/sites/Target/Policies Archive",
+          "fileCount": 180,
+          "storageBytes": 536870912,
+          "metadataCount": 4,
+          "permissionRisk": "Low",
+          "migrationAction": "migrate",
+          "includeInMigration": true,
+          "reason": "Low-risk pilot content."
+        }
+      ],
+      "excludedItems": [],
+      "prerequisites": [],
+      "estimatedFiles": 180,
+      "estimatedStorage": 536870912,
+      "estimatedDuration": "PT45M",
+      "ownerRole": "Migration Lead",
+      "approvalStatus": "not_started",
+      "notes": "Review before execution design."
+    }
+  ],
+  "options": [
+    { "key": "preservePermissions", "label": "Preserve permissions", "value": true, "description": "Planning option only." },
+    { "key": "preserveMetadata", "label": "Preserve metadata", "value": true, "description": "Planning option only." },
+    { "key": "includeVersionHistory", "label": "Include version history", "value": true, "description": "Planning option only." },
+    { "key": "validateAfterMigration", "label": "Validate after migration", "value": true, "description": "Planning option only." }
+  ],
+  "checklist": [
+    { "id": "source-access", "title": "Confirm source SharePoint access", "description": "Confirm source SharePoint access", "category": "Access", "required": true, "status": "not_started", "ownerRole": "SharePoint Admin" },
+    { "id": "target-access", "title": "Confirm target SharePoint access", "description": "Confirm target SharePoint access", "category": "Access", "required": true, "status": "not_started", "ownerRole": "SharePoint Admin" }
+  ],
+  "risks": [],
+  "remediationPrerequisites": [],
+  "approvals": [
+    { "role": "Migration Lead", "status": "not_started", "approvedBy": "", "approvedAt": null, "notes": "" }
+  ],
+  "runbookPath": "",
+  "warnings": [],
+  "errors": []
+}

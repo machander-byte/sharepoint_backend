@@ -11,4 +11,7 @@ public interface IMigrationService
     Task StartJobAsync(Guid jobId, string userId, CancellationToken cancellationToken);
     Task PauseJobAsync(Guid jobId, string userId, CancellationToken cancellationToken);
     Task ResumeJobAsync(Guid jobId, string userId, CancellationToken cancellationToken);
+    Task CancelJobAsync(Guid jobId, string userId, CancellationToken cancellationToken);
+    Task RetryJobAsync(Guid jobId, string userId, CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<MigrationJobEvent>> GetTimelineAsync(Guid jobId, string userId, CancellationToken cancellationToken);
 }

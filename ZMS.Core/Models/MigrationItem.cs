@@ -12,6 +12,7 @@ public class MigrationItem
     public long FileSizeInBytes { get; set; }
     public Dictionary<string, string> Metadata { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public MigrationItemStatus Status { get; set; } = MigrationItemStatus.Pending;
+    public EnterpriseMigrationItemState EnterpriseState { get; set; } = EnterpriseMigrationItemState.PENDING;
     public int RetryCount { get; set; }
     public string? ErrorMessage { get; set; }
     public DateTimeOffset CreatedUtc { get; set; } = DateTimeOffset.UtcNow;

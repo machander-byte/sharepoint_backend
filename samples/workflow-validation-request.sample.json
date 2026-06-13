@@ -1,0 +1,7 @@
+{
+  "source": "latest_scan",
+  "useSampleFallback": true,
+  "createdBy": "Migration Lead",
+  "includeExecutionSimulation": true,
+  "includeTransferPreview": true
+}

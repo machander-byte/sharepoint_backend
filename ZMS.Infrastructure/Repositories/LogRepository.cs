@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ZMS.Core.Interfaces;
 using ZMS.Core.Models;
+using ZMS.Core.Security;
 using ZMS.Infrastructure.Persistence;
 
 namespace ZMS.Infrastructure.Repositories;
@@ -16,6 +17,8 @@ public class LogRepository : ILogRepository
 
     public async Task AddAsync(LogEntry entry, CancellationToken cancellationToken)
     {
+        entry.Message = SecretRedactor.Redact(entry.Message);
+        entry.Details = string.IsNullOrWhiteSpace(entry.Details) ? entry.Details : SecretRedactor.Redact(entry.Details);
         _dbContext.Logs.Add(entry);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }

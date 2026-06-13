@@ -4,6 +4,8 @@ using ZMS.Core.Interfaces;
 using ZMS.Core.Models;
 using ZMS.Core.Options;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using ZMS.Core.Security;
 
 namespace ZMS.Application.Services;
 
@@ -15,29 +17,38 @@ public class MigrationService : IMigrationService
     private readonly IMigrationJobRepository _jobRepository;
     private readonly IMigrationItemRepository _itemRepository;
     private readonly ILogRepository _logRepository;
+    private readonly IMigrationJobEventRepository _jobEventRepository;
     private readonly IJobQueue _jobQueue;
     private readonly ConnectorResolver _connectorResolver;
     private readonly ISecretProtector _secretProtector;
     private readonly MigrationEngineOptions _migrationEngineOptions;
+    private readonly IEnterpriseJobStateMachine _stateMachine;
+    private readonly ILogger<MigrationService> _logger;
 
     public MigrationService(
         IConnectionRepository connectionRepository,
         IMigrationJobRepository jobRepository,
         IMigrationItemRepository itemRepository,
         ILogRepository logRepository,
+        IMigrationJobEventRepository jobEventRepository,
         IJobQueue jobQueue,
         ConnectorResolver connectorResolver,
         ISecretProtector secretProtector,
-        IOptions<MigrationEngineOptions> migrationEngineOptions)
+        IOptions<MigrationEngineOptions> migrationEngineOptions,
+        IEnterpriseJobStateMachine stateMachine,
+        ILogger<MigrationService> logger)
     {
         _connectionRepository = connectionRepository;
         _jobRepository = jobRepository;
         _itemRepository = itemRepository;
         _logRepository = logRepository;
+        _jobEventRepository = jobEventRepository;
         _jobQueue = jobQueue;
         _connectorResolver = connectorResolver;
         _secretProtector = secretProtector;
         _migrationEngineOptions = migrationEngineOptions.Value;
+        _stateMachine = stateMachine;
+        _logger = logger;
     }
 
     public Task<IReadOnlyCollection<MigrationJob>> ListJobsAsync(string userId, CancellationToken cancellationToken)
@@ -94,12 +105,16 @@ public class MigrationService : IMigrationService
             BatchSize = request.BatchSize > 0 ? request.BatchSize : _migrationEngineOptions.DefaultBatchSize,
             MaxRetryCount = request.MaxRetryCount >= 0 ? request.MaxRetryCount : _migrationEngineOptions.DefaultMaxRetryCount,
             Status = JobStatus.Draft,
+            EnterpriseState = EnterpriseJobState.CREATED,
+            CorrelationId = Guid.NewGuid().ToString("N"),
             CreatedUtc = DateTimeOffset.UtcNow,
             UpdatedUtc = DateTimeOffset.UtcNow
         };
 
         await _jobRepository.AddAsync(job, cancellationToken);
         await WriteLogAsync(job.Id, null, LogSeverity.Information, $"Job '{job.Name}' was created.", null, cancellationToken);
+        await WriteJobEventAsync(job, "JobCreated", null, job.EnterpriseState, $"Job '{job.Name}' was created.", EnterpriseSeverity.Info, cancellationToken);
+        _logger.LogInformation("Migration job {MigrationJobId} created with correlation {CorrelationId}.", job.Id, job.CorrelationId);
 
         return job;
     }
@@ -126,32 +141,73 @@ public class MigrationService : IMigrationService
             return;
         }
 
+        await TransitionJobAsync(job, EnterpriseJobState.QUEUED, "JobQueued", "The job was queued for processing.", EnterpriseSeverity.Info, cancellationToken);
         job.Status = JobStatus.Queued;
         job.StartedUtc ??= DateTimeOffset.UtcNow;
         job.UpdatedUtc = DateTimeOffset.UtcNow;
         await _jobRepository.UpdateAsync(job, cancellationToken);
 
         await WriteLogAsync(job.Id, null, LogSeverity.Information, "The job was queued for processing.", null, cancellationToken);
+        _logger.LogInformation("Migration job {MigrationJobId} queued with state {EnterpriseState}.", job.Id, job.EnterpriseState);
         await _jobQueue.EnqueueAsync(job.Id, cancellationToken);
     }
 
     public async Task PauseJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
         var job = await RequireJobAsync(jobId, userId, cancellationToken);
+        await TransitionJobAsync(job, EnterpriseJobState.PAUSED, "JobPaused", "The job was paused.", EnterpriseSeverity.Warning, cancellationToken);
         job.Status = JobStatus.Paused;
         job.UpdatedUtc = DateTimeOffset.UtcNow;
         await _jobRepository.UpdateAsync(job, cancellationToken);
         await WriteLogAsync(job.Id, null, LogSeverity.Warning, "The job was paused.", null, cancellationToken);
+        _logger.LogWarning("Migration job {MigrationJobId} paused.", job.Id);
     }
 
     public async Task ResumeJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {
         var job = await RequireJobAsync(jobId, userId, cancellationToken);
+        await TransitionJobAsync(job, EnterpriseJobState.QUEUED, "JobResumed", "The job was resumed and queued.", EnterpriseSeverity.Info, cancellationToken);
         job.Status = JobStatus.Queued;
         job.UpdatedUtc = DateTimeOffset.UtcNow;
         await _jobRepository.UpdateAsync(job, cancellationToken);
         await WriteLogAsync(job.Id, null, LogSeverity.Information, "The job was resumed and queued.", null, cancellationToken);
+        _logger.LogInformation("Migration job {MigrationJobId} resumed and queued.", job.Id);
         await _jobQueue.EnqueueAsync(job.Id, cancellationToken);
+    }
+
+    public async Task CancelJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
+    {
+        var job = await RequireJobAsync(jobId, userId, cancellationToken);
+        await TransitionJobAsync(job, EnterpriseJobState.CANCELLED, "JobCancelled", "The job was cancelled.", EnterpriseSeverity.Warning, cancellationToken);
+        job.Status = JobStatus.Failed;
+        job.FailureReason = "Cancelled by operator.";
+        job.FinishedUtc = DateTimeOffset.UtcNow;
+        job.UpdatedUtc = DateTimeOffset.UtcNow;
+        await _jobRepository.UpdateAsync(job, cancellationToken);
+        await WriteLogAsync(job.Id, null, LogSeverity.Warning, "The job was cancelled.", null, cancellationToken);
+        _logger.LogWarning("Migration job {MigrationJobId} cancelled.", job.Id);
+    }
+
+    public async Task RetryJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
+    {
+        var job = await RequireJobAsync(jobId, userId, cancellationToken);
+        await TransitionJobAsync(job, EnterpriseJobState.QUEUED, "JobRetryQueued", "The job was queued for retry.", EnterpriseSeverity.Warning, cancellationToken);
+        job.Status = JobStatus.Queued;
+        job.RetryCount++;
+        job.FailureReason = null;
+        job.LastError = null;
+        job.FinishedUtc = null;
+        job.UpdatedUtc = DateTimeOffset.UtcNow;
+        await _jobRepository.UpdateAsync(job, cancellationToken);
+        await WriteLogAsync(job.Id, null, LogSeverity.Warning, "The job was queued for retry.", null, cancellationToken);
+        _logger.LogWarning("Migration job {MigrationJobId} queued for retry {RetryCount}.", job.Id, job.RetryCount);
+        await _jobQueue.EnqueueAsync(job.Id, cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<MigrationJobEvent>> GetTimelineAsync(Guid jobId, string userId, CancellationToken cancellationToken)
+    {
+        await RequireJobAsync(jobId, userId, cancellationToken);
+        return await _jobEventRepository.GetByJobIdAsync(jobId, cancellationToken);
     }
 
     private async Task EnsureItemsCreatedAsync(MigrationJob job, CancellationToken cancellationToken)
@@ -213,6 +269,46 @@ public class MigrationService : IMigrationService
     {
         return await _jobRepository.GetByIdAsync(jobId, userId, cancellationToken)
             ?? throw new KeyNotFoundException($"Migration job '{jobId}' was not found.");
+    }
+
+    private async Task TransitionJobAsync(
+        MigrationJob job,
+        EnterpriseJobState nextState,
+        string eventType,
+        string message,
+        EnterpriseSeverity severity,
+        CancellationToken cancellationToken)
+    {
+        var previousState = job.EnterpriseState;
+        _stateMachine.ValidateTransition(previousState, nextState);
+
+        job.EnterpriseState = nextState;
+        job.UpdatedUtc = DateTimeOffset.UtcNow;
+        await _jobRepository.UpdateAsync(job, cancellationToken);
+        await WriteJobEventAsync(job, eventType, previousState, nextState, message, severity, cancellationToken);
+    }
+
+    private Task WriteJobEventAsync(
+        MigrationJob job,
+        string eventType,
+        EnterpriseJobState? previousState,
+        EnterpriseJobState nextState,
+        string message,
+        EnterpriseSeverity severity,
+        CancellationToken cancellationToken)
+    {
+        return _jobEventRepository.AddAsync(new MigrationJobEvent
+        {
+            JobId = job.Id,
+            EventType = eventType,
+            PreviousState = previousState?.ToString(),
+            NewState = nextState.ToString(),
+            Message = SecretRedactor.Redact(message),
+            Severity = severity,
+            CreatedAt = DateTimeOffset.UtcNow,
+            CorrelationId = job.CorrelationId,
+            MetadataJson = "{}"
+        }, cancellationToken);
     }
 
     private static string ResolveSourceLocation(ConnectionProfile sourceConnection, string? requestedLocation)
@@ -312,8 +408,8 @@ public class MigrationService : IMigrationService
             JobId = jobId,
             ItemId = itemId,
             Severity = severity,
-            Message = message,
-            Details = details,
+            Message = SecretRedactor.Redact(message),
+            Details = string.IsNullOrWhiteSpace(details) ? details : SecretRedactor.Redact(details),
             CreatedUtc = DateTimeOffset.UtcNow
         }, cancellationToken);
     }

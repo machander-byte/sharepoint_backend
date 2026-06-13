@@ -1,0 +1,281 @@
+{
+  "tenantName": "Zettalogix SharePoint Online",
+  "adminUrl": "https://zettalogix-admin.sharepoint.com",
+  "rootUrl": "https://zettalogix.sharepoint.com",
+  "ownerEmail": "migrationlead@zettalogix.com",
+  "clientIdPlaceholder": "PASTE-PNP-ENTRA-APP-CLIENT-ID-HERE",
+  "generatedAt": "2026-05-12T00:00:00Z",
+  "generatedBy": "System Architect",
+  "globalOptions": {
+    "includeDefaultSubsites": true,
+    "generateSampleDocuments": true,
+    "includeMetadataColumns": true,
+    "createPermissionGroups": true,
+    "addMigrationEdgeCases": true,
+    "includeArchivedFolders": true,
+    "includeLongPathExamples": true,
+    "includeLargeFilePlaceholders": false
+  },
+  "siteCollections": [
+    {
+      "id": "hr-portal",
+      "title": "HR Portal",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-HR-Portal",
+      "department": "Human Resources",
+      "description": "Enterprise HR portal for payroll, policies, recruiting, and employee records.",
+      "subsites": [
+        { "id": "hr-recruitment", "title": "Recruitment", "url": "https://zettalogix.sharepoint.com/sites/ZMS-HR-Portal/Recruitment", "description": "Recruitment workspace." },
+        { "id": "hr-payroll", "title": "Payroll", "url": "https://zettalogix.sharepoint.com/sites/ZMS-HR-Portal/Payroll", "description": "Payroll workspace." },
+        { "id": "hr-policies", "title": "Policies", "url": "https://zettalogix.sharepoint.com/sites/ZMS-HR-Portal/Policies", "description": "Policy workspace." },
+        { "id": "hr-employee-records", "title": "Employee Records", "url": "https://zettalogix.sharepoint.com/sites/ZMS-HR-Portal/Employee-Records", "description": "Employee records workspace." }
+      ],
+      "libraries": [
+        { "id": "hr-employee-documents", "title": "Employee Documents", "type": "Document Library", "description": "Employee documents.", "metadataFieldIds": ["hr-department", "hr-sensitivity"], "folders": [{ "id": "hr-employee-active", "name": "Active", "path": "Employee Documents/Active" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "hr-reports", "title": "HR Reports", "type": "Report Library", "description": "HR reports.", "metadataFieldIds": ["hr-department", "hr-sensitivity"], "folders": [{ "id": "hr-reports-active", "name": "Active", "path": "HR Reports/Active" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "hr-policies-archive", "title": "Policies Archive", "type": "Document Library", "description": "Archived policies.", "metadataFieldIds": ["hr-department", "hr-sensitivity"], "folders": [{ "id": "hr-policies-archive-folder", "name": "Archive", "path": "Policies Archive/Archive", "archived": true }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "hr-recruitment-files", "title": "Recruitment Files", "type": "Document Library", "description": "Recruiting files.", "metadataFieldIds": ["hr-department", "hr-sensitivity"], "folders": [{ "id": "hr-recruitment-active", "name": "Active", "path": "Recruitment Files/Active" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "hr-payroll-documents", "title": "Payroll Documents", "type": "Document Library", "description": "Payroll documents.", "metadataFieldIds": ["hr-department", "hr-sensitivity"], "folders": [{ "id": "hr-payroll-confidential", "name": "Confidential", "path": "Payroll Documents/Confidential" }], "sampleFileCount": 50, "includeVersioning": true }
+      ],
+      "lists": [
+        { "id": "hr-employees", "title": "Employees", "description": "Employee list.", "columns": [], "sampleItemCount": 25 },
+        { "id": "hr-leave-requests", "title": "Leave Requests", "description": "Leave requests.", "columns": [], "sampleItemCount": 25 },
+        { "id": "hr-recruitment-pipeline", "title": "Recruitment Pipeline", "description": "Recruitment pipeline.", "columns": [], "sampleItemCount": 25 },
+        { "id": "hr-policy-review-tracker", "title": "Policy Review Tracker", "description": "Policy review tracker.", "columns": [], "sampleItemCount": 25 }
+      ],
+      "metadataFields": [
+        { "id": "hr-department", "name": "Department", "type": "Choice", "required": true, "choices": ["Human Resources"] },
+        { "id": "hr-sensitivity", "name": "Sensitivity", "type": "Choice", "required": true, "choices": ["Internal", "Confidential", "Restricted"] },
+        { "id": "hr-owner", "name": "Business Owner", "type": "Person", "required": true },
+        { "id": "hr-retention", "name": "Retention Date", "type": "Date", "required": false },
+        { "id": "hr-document-id", "name": "Document ID", "type": "Text", "required": true },
+        { "id": "hr-region", "name": "Region", "type": "Choice", "required": false, "choices": ["NA", "EMEA", "APAC"] },
+        { "id": "hr-status", "name": "Migration Status", "type": "Choice", "required": false, "choices": ["Ready", "Blocked", "Migrated"] },
+        { "id": "hr-cost-center", "name": "Cost Center", "type": "Number", "required": false }
+      ],
+      "permissionGroups": [
+        { "id": "hr-admins", "name": "HR Admins", "role": "Full Control", "users": ["hr-admin@zettalogix.com"] },
+        { "id": "hr-staff", "name": "HR Staff", "role": "Contribute", "users": ["hr-staff@zettalogix.com"] },
+        { "id": "employees", "name": "Employees", "role": "Read", "users": ["employee@zettalogix.com"] }
+      ],
+      "permissionRules": [
+        { "id": "hr-payroll-rule", "targetPath": "Payroll Documents/Confidential", "inheritance": "Broken", "groups": ["HR Admins"], "notes": "Broken inheritance example." }
+      ],
+      "folderStructures": [
+        { "id": "hr-payroll-confidential-folder", "name": "Confidential", "path": "Payroll Documents/Confidential" }
+      ],
+      "edgeCases": [
+        { "id": "hr-edge-1", "title": "Payroll Documents / Confidential has broken inheritance", "description": "Broken inheritance test.", "riskLevel": "Critical", "affectedPath": "Payroll Documents/Confidential" },
+        { "id": "hr-edge-2", "title": "Employee Records restricted to HR Admins and HR Staff", "description": "Restricted records test.", "riskLevel": "High", "affectedPath": "Employee Records" },
+        { "id": "hr-edge-3", "title": "Policies Archive contains archived folders", "description": "Archived folder test.", "riskLevel": "Medium", "affectedPath": "Policies Archive/Archive" }
+      ]
+    },
+    {
+      "id": "finance-hub",
+      "title": "Finance Hub",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-Finance-Hub",
+      "department": "Finance",
+      "description": "Finance workspace for invoices, budgeting, audit, and taxation.",
+      "subsites": [
+        { "id": "finance-invoices", "title": "Invoices", "url": "https://zettalogix.sharepoint.com/sites/ZMS-Finance-Hub/Invoices", "description": "Invoices workspace." },
+        { "id": "finance-budgeting", "title": "Budgeting", "url": "https://zettalogix.sharepoint.com/sites/ZMS-Finance-Hub/Budgeting", "description": "Budgeting workspace." },
+        { "id": "finance-audit", "title": "Audit", "url": "https://zettalogix.sharepoint.com/sites/ZMS-Finance-Hub/Audit", "description": "Audit workspace." },
+        { "id": "finance-taxation", "title": "Taxation", "url": "https://zettalogix.sharepoint.com/sites/ZMS-Finance-Hub/Taxation", "description": "Taxation workspace." }
+      ],
+      "libraries": [
+        { "id": "finance-reports", "title": "Financial Reports", "type": "Report Library", "description": "Financial reports.", "metadataFieldIds": ["finance-department"], "folders": [{ "id": "finance-reports-active", "name": "Active", "path": "Financial Reports/Active" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "vendor-bills", "title": "Vendor Bills", "type": "Document Library", "description": "Vendor bills.", "metadataFieldIds": ["finance-department"], "folders": [{ "id": "vendor-high-value", "name": "High Value Vendors", "path": "Vendor Bills/High Value Vendors" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "tax-documents", "title": "Tax Documents", "type": "Records Library", "description": "Tax documents.", "metadataFieldIds": ["finance-department"], "folders": [{ "id": "tax-restricted", "name": "Restricted", "path": "Tax Documents/Restricted" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "audit-evidence", "title": "Audit Evidence", "type": "Records Library", "description": "Audit evidence.", "metadataFieldIds": ["finance-department"], "folders": [{ "id": "audit-secure", "name": "Secure", "path": "Audit Evidence/Secure" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "budget-files", "title": "Budget Files", "type": "Document Library", "description": "Budget files.", "metadataFieldIds": ["finance-department"], "folders": [{ "id": "budget-active", "name": "Active", "path": "Budget Files/Active" }], "sampleFileCount": 50, "includeVersioning": true }
+      ],
+      "lists": [
+        { "id": "vendors", "title": "Vendors", "description": "Vendors.", "columns": [], "sampleItemCount": 25 },
+        { "id": "expense-requests", "title": "Expense Requests", "description": "Expense requests.", "columns": [], "sampleItemCount": 25 },
+        { "id": "audit-tracking", "title": "Audit Tracking", "description": "Audit tracking.", "columns": [], "sampleItemCount": 25 },
+        { "id": "budget-approvals", "title": "Budget Approvals", "description": "Budget approvals.", "columns": [], "sampleItemCount": 25 }
+      ],
+      "metadataFields": [
+        { "id": "finance-department", "name": "Department", "type": "Choice", "required": true, "choices": ["Finance"] },
+        { "id": "finance-sensitivity", "name": "Sensitivity", "type": "Choice", "required": true, "choices": ["Internal", "Confidential", "Restricted"] },
+        { "id": "finance-owner", "name": "Business Owner", "type": "Person", "required": true },
+        { "id": "finance-retention", "name": "Retention Date", "type": "Date", "required": false },
+        { "id": "finance-document-id", "name": "Document ID", "type": "Text", "required": true },
+        { "id": "finance-region", "name": "Region", "type": "Choice", "required": false, "choices": ["NA", "EMEA", "APAC"] },
+        { "id": "finance-status", "name": "Migration Status", "type": "Choice", "required": false, "choices": ["Ready", "Blocked", "Migrated"] },
+        { "id": "finance-cost-center", "name": "Cost Center", "type": "Number", "required": false }
+      ],
+      "permissionGroups": [
+        { "id": "finance-admins", "name": "Finance Admins", "role": "Full Control", "users": ["finance-admin@zettalogix.com"] },
+        { "id": "finance-team", "name": "Finance Team", "role": "Contribute", "users": ["finance-team@zettalogix.com"] },
+        { "id": "executives", "name": "Executives", "role": "Read", "users": ["executive@zettalogix.com"] }
+      ],
+      "permissionRules": [
+        { "id": "audit-rule", "targetPath": "Audit Evidence", "inheritance": "Broken", "groups": ["Finance Admins", "Executives"], "notes": "Broken inheritance example." }
+      ],
+      "folderStructures": [
+        { "id": "vendor-high-value-folder", "name": "High Value Vendors", "path": "Vendor Bills/High Value Vendors" }
+      ],
+      "edgeCases": [
+        { "id": "finance-edge-1", "title": "Audit Evidence has broken inheritance", "description": "Audit evidence is restricted.", "riskLevel": "High", "affectedPath": "Audit Evidence" },
+        { "id": "finance-edge-2", "title": "Tax Documents restricted", "description": "Tax records are restricted.", "riskLevel": "High", "affectedPath": "Tax Documents" },
+        { "id": "finance-edge-3", "title": "Vendor Bills / High Value Vendors has unique permissions", "description": "High value vendor folder is restricted.", "riskLevel": "Medium", "affectedPath": "Vendor Bills/High Value Vendors" }
+      ]
+    },
+    {
+      "id": "it-operations",
+      "title": "IT Operations",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-IT-Operations",
+      "department": "IT",
+      "description": "IT workspace for infrastructure, security, DevOps, and helpdesk content.",
+      "subsites": [
+        { "id": "it-infrastructure", "title": "Infrastructure", "url": "https://zettalogix.sharepoint.com/sites/ZMS-IT-Operations/Infrastructure", "description": "Infrastructure workspace." },
+        { "id": "it-security", "title": "Security", "url": "https://zettalogix.sharepoint.com/sites/ZMS-IT-Operations/Security", "description": "Security workspace." },
+        { "id": "it-devops", "title": "DevOps", "url": "https://zettalogix.sharepoint.com/sites/ZMS-IT-Operations/DevOps", "description": "DevOps workspace." },
+        { "id": "it-helpdesk", "title": "Helpdesk", "url": "https://zettalogix.sharepoint.com/sites/ZMS-IT-Operations/Helpdesk", "description": "Helpdesk workspace." }
+      ],
+      "libraries": [
+        { "id": "architecture-docs", "title": "Architecture Docs", "type": "Document Library", "description": "Architecture docs.", "metadataFieldIds": ["it-department"], "folders": [{ "id": "architecture-active", "name": "Active", "path": "Architecture Docs/Active" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "deployment-scripts", "title": "Deployment Scripts", "type": "Document Library", "description": "Deployment scripts.", "metadataFieldIds": ["it-department"], "folders": [{ "id": "scripts-restricted", "name": "Restricted", "path": "Deployment Scripts/Restricted" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "security-policies", "title": "Security Policies", "type": "Document Library", "description": "Security policies.", "metadataFieldIds": ["it-department"], "folders": [{ "id": "security-admins", "name": "IT Admins Only", "path": "Security Policies/IT Admins Only" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "incident-evidence", "title": "Incident Evidence", "type": "Records Library", "description": "Incident evidence.", "metadataFieldIds": ["it-department"], "folders": [{ "id": "critical-incidents", "name": "Critical Incidents", "path": "Incident Evidence/Critical Incidents" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "helpdesk-attachments", "title": "Helpdesk Attachments", "type": "Document Library", "description": "Helpdesk attachments.", "metadataFieldIds": ["it-department"], "folders": [{ "id": "helpdesk-active", "name": "Active", "path": "Helpdesk Attachments/Active" }], "sampleFileCount": 50, "includeVersioning": true }
+      ],
+      "lists": [
+        { "id": "support-tickets", "title": "Support Tickets", "description": "Support tickets.", "columns": [], "sampleItemCount": 25 },
+        { "id": "assets", "title": "Assets", "description": "Assets.", "columns": [], "sampleItemCount": 25 },
+        { "id": "server-inventory", "title": "Server Inventory", "description": "Server inventory.", "columns": [], "sampleItemCount": 25 },
+        { "id": "change-requests", "title": "Change Requests", "description": "Change requests.", "columns": [], "sampleItemCount": 25 }
+      ],
+      "metadataFields": [
+        { "id": "it-department", "name": "Department", "type": "Choice", "required": true, "choices": ["IT"] },
+        { "id": "it-sensitivity", "name": "Sensitivity", "type": "Choice", "required": true, "choices": ["Internal", "Confidential", "Restricted"] },
+        { "id": "it-owner", "name": "Business Owner", "type": "Person", "required": true },
+        { "id": "it-retention", "name": "Retention Date", "type": "Date", "required": false },
+        { "id": "it-document-id", "name": "Document ID", "type": "Text", "required": true },
+        { "id": "it-region", "name": "Region", "type": "Choice", "required": false, "choices": ["NA", "EMEA", "APAC"] },
+        { "id": "it-status", "name": "Migration Status", "type": "Choice", "required": false, "choices": ["Ready", "Blocked", "Migrated"] },
+        { "id": "it-cost-center", "name": "Cost Center", "type": "Number", "required": false }
+      ],
+      "permissionGroups": [
+        { "id": "it-admins", "name": "IT Admins", "role": "Full Control", "users": ["it-admin@zettalogix.com"] },
+        { "id": "engineers", "name": "Engineers", "role": "Contribute", "users": ["engineer@zettalogix.com"] },
+        { "id": "it-employees", "name": "Employees", "role": "Read", "users": ["employee@zettalogix.com"] }
+      ],
+      "permissionRules": [
+        { "id": "incident-rule", "targetPath": "Incident Evidence/Critical Incidents", "inheritance": "Broken", "groups": ["IT Admins"], "notes": "Critical incidents are restricted." }
+      ],
+      "folderStructures": [
+        { "id": "critical-incidents-folder", "name": "Critical Incidents", "path": "Incident Evidence/Critical Incidents" }
+      ],
+      "edgeCases": [
+        { "id": "it-edge-1", "title": "Security Policies IT Admins only", "description": "Security policies restricted.", "riskLevel": "High", "affectedPath": "Security Policies" },
+        { "id": "it-edge-2", "title": "Incident Evidence / Critical Incidents has broken inheritance", "description": "Critical incident inheritance break.", "riskLevel": "Critical", "affectedPath": "Incident Evidence/Critical Incidents" },
+        { "id": "it-edge-3", "title": "Deployment Scripts restricted to Engineers and IT Admins", "description": "Deployment scripts restricted.", "riskLevel": "High", "affectedPath": "Deployment Scripts" }
+      ]
+    },
+    {
+      "id": "project-management-office",
+      "title": "Project Management Office",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-PMO",
+      "department": "PMO",
+      "description": "PMO workspace for projects, deliverables, contracts, meetings, and UAT.",
+      "subsites": [
+        { "id": "pmo-client-a", "title": "Client A", "url": "https://zettalogix.sharepoint.com/sites/ZMS-PMO/Client-A", "description": "Client A workspace." },
+        { "id": "pmo-client-b", "title": "Client B", "url": "https://zettalogix.sharepoint.com/sites/ZMS-PMO/Client-B", "description": "Client B workspace." },
+        { "id": "pmo-internal-projects", "title": "Internal Projects", "url": "https://zettalogix.sharepoint.com/sites/ZMS-PMO/Internal-Projects", "description": "Internal project workspace." },
+        { "id": "pmo-archive", "title": "Archive", "url": "https://zettalogix.sharepoint.com/sites/ZMS-PMO/Archive", "description": "Archive workspace." }
+      ],
+      "libraries": [
+        { "id": "project-documents", "title": "Project Documents", "type": "Document Library", "description": "Project documents.", "metadataFieldIds": ["pmo-department"], "folders": [{ "id": "projects-active", "name": "Active", "path": "Project Documents/Active" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "deliverables", "title": "Deliverables", "type": "Document Library", "description": "Deliverables.", "metadataFieldIds": ["pmo-department"], "folders": [{ "id": "client-a-deliverables", "name": "Client A", "path": "Deliverables/Client A" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "contracts", "title": "Contracts", "type": "Document Library", "description": "Contracts.", "metadataFieldIds": ["pmo-department"], "folders": [{ "id": "contracts-restricted", "name": "Restricted", "path": "Contracts/Restricted" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "meeting-notes", "title": "Meeting Notes", "type": "Document Library", "description": "Meeting notes.", "metadataFieldIds": ["pmo-department"], "folders": [{ "id": "meetings-active", "name": "Active", "path": "Meeting Notes/Active" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "uat-documents", "title": "UAT Documents", "type": "Document Library", "description": "UAT documents.", "metadataFieldIds": ["pmo-department"], "folders": [{ "id": "uat-active", "name": "Active", "path": "UAT Documents/Active" }], "sampleFileCount": 50, "includeVersioning": true }
+      ],
+      "lists": [
+        { "id": "tasks", "title": "Tasks", "description": "Tasks.", "columns": [], "sampleItemCount": 25 },
+        { "id": "risks", "title": "Risks", "description": "Risks.", "columns": [], "sampleItemCount": 25 },
+        { "id": "milestones", "title": "Milestones", "description": "Milestones.", "columns": [], "sampleItemCount": 25 },
+        { "id": "client-contacts", "title": "Client Contacts", "description": "Client contacts.", "columns": [], "sampleItemCount": 25 }
+      ],
+      "metadataFields": [
+        { "id": "pmo-department", "name": "Department", "type": "Choice", "required": true, "choices": ["PMO"] },
+        { "id": "pmo-sensitivity", "name": "Sensitivity", "type": "Choice", "required": true, "choices": ["Internal", "Confidential", "Restricted"] },
+        { "id": "pmo-owner", "name": "Business Owner", "type": "Person", "required": true },
+        { "id": "pmo-retention", "name": "Retention Date", "type": "Date", "required": false },
+        { "id": "pmo-document-id", "name": "Document ID", "type": "Text", "required": true },
+        { "id": "pmo-region", "name": "Region", "type": "Choice", "required": false, "choices": ["NA", "EMEA", "APAC"] },
+        { "id": "pmo-status", "name": "Migration Status", "type": "Choice", "required": false, "choices": ["Ready", "Blocked", "Migrated"] },
+        { "id": "pmo-cost-center", "name": "Cost Center", "type": "Number", "required": false }
+      ],
+      "permissionGroups": [
+        { "id": "pmo-admins", "name": "PMO Admins", "role": "Full Control", "users": ["pmo-admin@zettalogix.com"] },
+        { "id": "project-managers", "name": "Project Managers", "role": "Contribute", "users": ["project-manager@zettalogix.com"] },
+        { "id": "clients", "name": "Clients", "role": "Read", "users": ["client@external.example"] }
+      ],
+      "permissionRules": [
+        { "id": "contracts-rule", "targetPath": "Contracts", "inheritance": "Broken", "groups": ["PMO Admins", "Project Managers"], "notes": "Contracts have broken inheritance." }
+      ],
+      "folderStructures": [
+        { "id": "long-path-folder", "name": "Old Deliverables", "path": "Archive/2021/Old Deliverables/Regional Review/Final Client Approved Copies", "longPathExample": true }
+      ],
+      "edgeCases": [
+        { "id": "pmo-edge-1", "title": "Contracts has broken inheritance", "description": "Contracts restricted.", "riskLevel": "High", "affectedPath": "Contracts" },
+        { "id": "pmo-edge-2", "title": "Client A folders simulate restricted client access", "description": "Client restricted access.", "riskLevel": "High", "affectedPath": "Deliverables/Client A" },
+        { "id": "pmo-edge-3", "title": "Archive / 2021 / Old Deliverables has long paths", "description": "Long path example.", "riskLevel": "Medium", "affectedPath": "Archive/2021/Old Deliverables" }
+      ]
+    },
+    {
+      "id": "operations-center",
+      "title": "Operations Center",
+      "url": "https://zettalogix.sharepoint.com/sites/ZMS-Operations",
+      "department": "Operations",
+      "description": "Operations workspace for logistics, procurement, vendors, and reports.",
+      "subsites": [
+        { "id": "ops-logistics", "title": "Logistics", "url": "https://zettalogix.sharepoint.com/sites/ZMS-Operations/Logistics", "description": "Logistics workspace." },
+        { "id": "ops-procurement", "title": "Procurement", "url": "https://zettalogix.sharepoint.com/sites/ZMS-Operations/Procurement", "description": "Procurement workspace." },
+        { "id": "ops-vendors", "title": "Vendors", "url": "https://zettalogix.sharepoint.com/sites/ZMS-Operations/Vendors", "description": "Vendors workspace." },
+        { "id": "ops-reports", "title": "Reports", "url": "https://zettalogix.sharepoint.com/sites/ZMS-Operations/Reports", "description": "Reports workspace." }
+      ],
+      "libraries": [
+        { "id": "procurement-docs", "title": "Procurement Docs", "type": "Document Library", "description": "Procurement docs.", "metadataFieldIds": ["ops-department"], "folders": [{ "id": "procurement-duplicate", "name": "Duplicate", "path": "Procurement Docs/Duplicate" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "vendor-agreements", "title": "Vendor Agreements", "type": "Document Library", "description": "Vendor agreements.", "metadataFieldIds": ["ops-department"], "folders": [{ "id": "vendor-restricted", "name": "Restricted", "path": "Vendor Agreements/Restricted" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "operational-reports", "title": "Operational Reports", "type": "Report Library", "description": "Operational reports.", "metadataFieldIds": ["ops-department"], "folders": [{ "id": "ops-reports-active", "name": "Active", "path": "Operational Reports/Active" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "compliance-records", "title": "Compliance Records", "type": "Records Library", "description": "Compliance records.", "metadataFieldIds": ["ops-department"], "folders": [{ "id": "compliance-expired", "name": "Expired", "path": "Compliance Records/Expired" }], "sampleFileCount": 50, "includeVersioning": true },
+        { "id": "inspection-reports", "title": "Inspection Reports", "type": "Report Library", "description": "Inspection reports.", "metadataFieldIds": ["ops-department"], "folders": [{ "id": "inspection-active", "name": "Active", "path": "Inspection Reports/Active" }], "sampleFileCount": 50, "includeVersioning": true }
+      ],
+      "lists": [
+        { "id": "shipments", "title": "Shipments", "description": "Shipments.", "columns": [], "sampleItemCount": 25 },
+        { "id": "purchase-orders", "title": "Purchase Orders", "description": "Purchase orders.", "columns": [], "sampleItemCount": 25 },
+        { "id": "vendor-tracking", "title": "Vendor Tracking", "description": "Vendor tracking.", "columns": [], "sampleItemCount": 25 },
+        { "id": "operations-tasks", "title": "Operations Tasks", "description": "Operations tasks.", "columns": [], "sampleItemCount": 25 }
+      ],
+      "metadataFields": [
+        { "id": "ops-department", "name": "Department", "type": "Choice", "required": true, "choices": ["Operations"] },
+        { "id": "ops-sensitivity", "name": "Sensitivity", "type": "Choice", "required": true, "choices": ["Internal", "Confidential", "Restricted"] },
+        { "id": "ops-owner", "name": "Business Owner", "type": "Person", "required": true },
+        { "id": "ops-retention", "name": "Retention Date", "type": "Date", "required": false },
+        { "id": "ops-document-id", "name": "Document ID", "type": "Text", "required": true },
+        { "id": "ops-region", "name": "Region", "type": "Choice", "required": false, "choices": ["NA", "EMEA", "APAC"] },
+        { "id": "ops-status", "name": "Migration Status", "type": "Choice", "required": false, "choices": ["Ready", "Blocked", "Migrated"] },
+        { "id": "ops-cost-center", "name": "Cost Center", "type": "Number", "required": false }
+      ],
+      "permissionGroups": [
+        { "id": "ops-admins", "name": "Operations Admins", "role": "Full Control", "users": ["ops-admin@zettalogix.com"] },
+        { "id": "ops-team", "name": "Ops Team", "role": "Contribute", "users": ["ops-team@zettalogix.com"] },
+        { "id": "management", "name": "Management", "role": "Read", "users": ["management@zettalogix.com"] }
+      ],
+      "permissionRules": [
+        { "id": "vendor-agreements-rule", "targetPath": "Vendor Agreements", "inheritance": "Broken", "groups": ["Operations Admins", "Management"], "notes": "Vendor agreements have unique permissions." }
+      ],
+      "folderStructures": [
+        { "id": "compliance-expired-folder", "name": "Expired", "path": "Compliance Records/Expired" }
+      ],
+      "edgeCases": [
+        { "id": "ops-edge-1", "title": "Vendor Agreements has unique permissions", "description": "Vendor agreements restricted.", "riskLevel": "High", "affectedPath": "Vendor Agreements" },
+        { "id": "ops-edge-2", "title": "Compliance Records / Expired restricted", "description": "Expired records restricted.", "riskLevel": "Medium", "affectedPath": "Compliance Records/Expired" },
+        { "id": "ops-edge-3", "title": "Procurement Docs has duplicate folder structures", "description": "Duplicate folder structure test.", "riskLevel": "Medium", "affectedPath": "Procurement Docs" }
+      ]
+    }
+  ]
+}

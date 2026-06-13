@@ -60,6 +60,7 @@ public class MigrationJobProcessor : BackgroundService
         var itemRepository = services.GetRequiredService<IMigrationItemRepository>();
         var connectionRepository = services.GetRequiredService<IConnectionRepository>();
         var logRepository = services.GetRequiredService<ILogRepository>();
+        var jobEventRepository = services.GetRequiredService<IMigrationJobEventRepository>();
         var connectorResolver = services.GetRequiredService<ConnectorResolver>();
         var secretProtector = services.GetRequiredService<ISecretProtector>();
 
@@ -95,11 +96,22 @@ public class MigrationJobProcessor : BackgroundService
                 throw new InvalidOperationException(targetTest.Message);
             }
 
+            var previousState = job.EnterpriseState;
             job.Status = JobStatus.Running;
+            job.EnterpriseState = EnterpriseJobState.MIGRATING;
             job.StartedUtc ??= DateTimeOffset.UtcNow;
             job.UpdatedUtc = DateTimeOffset.UtcNow;
             await jobRepository.UpdateAsync(job, cancellationToken);
             await WriteLogAsync(logRepository, job.Id, null, LogSeverity.Information, "Migration job processing started.", null, cancellationToken);
+            await WriteJobEventAsync(
+                jobEventRepository,
+                job,
+                "JobMigrating",
+                previousState,
+                EnterpriseJobState.MIGRATING,
+                "Migration worker started processing the job.",
+                EnterpriseSeverity.Info,
+                cancellationToken);
 
             await targetConnector.EnsureTargetSiteAsync(targetConnection, job.TargetSiteUrl, cancellationToken);
             await targetConnector.EnsureTargetLibraryAsync(
@@ -215,7 +227,7 @@ public class MigrationJobProcessor : BackgroundService
             job = await jobRepository.GetByIdAsync(jobId, cancellationToken)
                 ?? throw new InvalidOperationException("The migration job was deleted before completion.");
 
-            await FinalizeJobAsync(jobRepository, itemRepository, logRepository, job, cancellationToken);
+            await FinalizeJobAsync(jobRepository, itemRepository, logRepository, jobEventRepository, job, cancellationToken);
         }
         catch (Exception exception)
         {
@@ -224,11 +236,23 @@ public class MigrationJobProcessor : BackgroundService
             var failedJob = await jobRepository.GetByIdAsync(jobId, cancellationToken);
             if (failedJob is not null)
             {
+                var previousState = failedJob.EnterpriseState;
                 failedJob.Status = JobStatus.Failed;
+                failedJob.EnterpriseState = EnterpriseJobState.FAILED_MIGRATION;
                 failedJob.LastError = exception.Message;
+                failedJob.FailureReason = exception.Message;
                 failedJob.UpdatedUtc = DateTimeOffset.UtcNow;
                 failedJob.FinishedUtc = DateTimeOffset.UtcNow;
                 await jobRepository.UpdateAsync(failedJob, cancellationToken);
+                await WriteJobEventAsync(
+                    jobEventRepository,
+                    failedJob,
+                    "JobFailed",
+                    previousState,
+                    EnterpriseJobState.FAILED_MIGRATION,
+                    "Migration job failed.",
+                    EnterpriseSeverity.Error,
+                    cancellationToken);
             }
 
             await WriteLogAsync(logRepository, jobId, null, LogSeverity.Error, "Migration job failed.", exception.Message, cancellationToken);
@@ -267,6 +291,7 @@ public class MigrationJobProcessor : BackgroundService
                 }
 
                 job.Status = JobStatus.Queued;
+                job.EnterpriseState = EnterpriseJobState.QUEUED;
                 job.UpdatedUtc = DateTimeOffset.UtcNow;
                 await jobRepository.UpdateAsync(job, cancellationToken);
 
@@ -310,6 +335,7 @@ public class MigrationJobProcessor : BackgroundService
         IMigrationJobRepository jobRepository,
         IMigrationItemRepository itemRepository,
         ILogRepository logRepository,
+        IMigrationJobEventRepository jobEventRepository,
         MigrationJob job,
         CancellationToken cancellationToken)
     {
@@ -319,7 +345,9 @@ public class MigrationJobProcessor : BackgroundService
         job.FailedItems = items.Count(item => item.Status == MigrationItemStatus.Failed);
         job.UpdatedUtc = DateTimeOffset.UtcNow;
         job.FinishedUtc = DateTimeOffset.UtcNow;
+        var previousState = job.EnterpriseState;
         job.Status = job.FailedItems > 0 ? JobStatus.CompletedWithErrors : JobStatus.Completed;
+        job.EnterpriseState = job.FailedItems > 0 ? EnterpriseJobState.PARTIALLY_FAILED : EnterpriseJobState.COMPLETED;
 
         await jobRepository.UpdateAsync(job, cancellationToken);
         await WriteLogAsync(
@@ -329,6 +357,15 @@ public class MigrationJobProcessor : BackgroundService
             LogSeverity.Information,
             $"Migration job finished with status '{job.Status}'.",
             null,
+            cancellationToken);
+        await WriteJobEventAsync(
+            jobEventRepository,
+            job,
+            "JobFinished",
+            previousState,
+            job.EnterpriseState,
+            $"Migration job finished with status '{job.Status}'.",
+            job.FailedItems > 0 ? EnterpriseSeverity.Warning : EnterpriseSeverity.Info,
             cancellationToken);
     }
 
@@ -349,6 +386,30 @@ public class MigrationJobProcessor : BackgroundService
             Message = message,
             Details = details,
             CreatedUtc = DateTimeOffset.UtcNow
+        }, cancellationToken);
+    }
+
+    private static Task WriteJobEventAsync(
+        IMigrationJobEventRepository jobEventRepository,
+        MigrationJob job,
+        string eventType,
+        EnterpriseJobState previousState,
+        EnterpriseJobState nextState,
+        string message,
+        EnterpriseSeverity severity,
+        CancellationToken cancellationToken)
+    {
+        return jobEventRepository.AddAsync(new MigrationJobEvent
+        {
+            JobId = job.Id,
+            EventType = eventType,
+            PreviousState = previousState.ToString(),
+            NewState = nextState.ToString(),
+            Message = message,
+            Severity = severity,
+            CreatedAt = DateTimeOffset.UtcNow,
+            CorrelationId = job.CorrelationId,
+            MetadataJson = "{}"
         }, cancellationToken);
     }
 

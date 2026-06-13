@@ -1,0 +1,19 @@
+{
+  "scanName": "ZMS Test Environment Discovery",
+  "mode": "config",
+  "tenantUrl": "https://zettalogix.sharepoint.com",
+  "adminUrl": "https://zettalogix-admin.sharepoint.com",
+  "siteUrls": [
+    "https://zettalogix.sharepoint.com/sites/ZMS-HR-Portal",
+    "https://zettalogix.sharepoint.com/sites/ZMS-Finance-Hub",
+    "https://zettalogix.sharepoint.com/sites/ZMS-IT-Operations",
+    "https://zettalogix.sharepoint.com/sites/ZMS-PMO",
+    "https://zettalogix.sharepoint.com/sites/ZMS-Operations"
+  ],
+  "clientId": "PNP_CLIENT_ID_PLACEHOLDER",
+  "includeFiles": true,
+  "includePermissions": true,
+  "includeMetadata": true,
+  "includeSubsites": true,
+  "environmentConfigPath": "samples/zms-spo-environment-config.sample.json"
+}

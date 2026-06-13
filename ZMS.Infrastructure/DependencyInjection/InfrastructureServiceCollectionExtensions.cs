@@ -12,15 +12,13 @@ public static class InfrastructureServiceCollectionExtensions
 {
     public static IServiceCollection AddZmsInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var databaseProvider = configuration["Database:Provider"] ?? "SqlServer";
+        var databaseProvider = configuration["Database:Provider"] ?? "Postgres";
         var connectionString = configuration.GetConnectionString("ZmsDatabase");
 
-        // Validate that connection string is provided for non-Sqlite providers
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
             {
-                // Default to in-memory SQLite for development
                 connectionString = "Data Source=:memory:";
             }
             else if (string.Equals(databaseProvider, "Postgres", StringComparison.OrdinalIgnoreCase)
@@ -28,14 +26,13 @@ public static class InfrastructureServiceCollectionExtensions
                 || string.Equals(databaseProvider, "Npgsql", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
-                    "Postgres database provider requires 'ConnectionStrings:ZmsDatabase' to be configured. " +
-                    "Please set the environment variable 'ConnectionStrings__ZmsDatabase' with a valid Postgres connection string.");
+                    "Supabase Postgres requires 'ConnectionStrings:ZmsDatabase' to be configured. " +
+                    "Set 'ConnectionStrings__ZmsDatabase' to the Supabase pooler connection string.");
             }
             else
             {
                 throw new InvalidOperationException(
-                    "SQL Server database provider requires 'ConnectionStrings:ZmsDatabase' to be configured. " +
-                    "Please set the environment variable 'ConnectionStrings__ZmsDatabase' with a valid SQL Server connection string.");
+                    $"Unsupported database provider '{databaseProvider}'. ZMS runtime is configured for Supabase Postgres.");
             }
         }
 
@@ -48,6 +45,13 @@ public static class InfrastructureServiceCollectionExtensions
             throw new InvalidOperationException(
                 "ConnectionStrings:ZmsDatabase looks like a Postgres connection string, but Database:Provider is not Postgres. " +
                 "Set the environment variable 'Database__Provider' to 'Postgres'.");
+        }
+
+        if (!IsPostgresProvider(databaseProvider)
+            && !string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Unsupported database provider '{databaseProvider}'. Use 'Postgres' for Supabase.");
         }
 
         services.AddDbContext<ZmsDbContext>(options =>
@@ -65,13 +69,17 @@ public static class InfrastructureServiceCollectionExtensions
                 return;
             }
 
-            options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure());
+            throw new InvalidOperationException(
+                $"Unsupported database provider '{databaseProvider}'. Use 'Postgres' for Supabase.");
         });
 
         services.AddScoped<IConnectionRepository, ConnectionRepository>();
         services.AddScoped<IMigrationJobRepository, MigrationJobRepository>();
         services.AddScoped<IMigrationItemRepository, MigrationItemRepository>();
         services.AddScoped<ILogRepository, LogRepository>();
+        services.AddScoped<IDiscoveryGraphRepository, DiscoveryGraphRepository>();
+        services.AddScoped<IMigrationJobEventRepository, MigrationJobEventRepository>();
+        services.AddScoped<IValidationRepository, ValidationRepository>();
 
         return services;
     }

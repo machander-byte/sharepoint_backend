@@ -1,0 +1,33 @@
+{
+  "simulationId": "sample-execution-simulation",
+  "planId": "sample-migration-plan",
+  "generatedAt": "2026-06-01T00:00:00Z",
+  "status": "completed",
+  "estimatedDurationMinutes": 390,
+  "estimatedFiles": 1250,
+  "estimatedStorageBytes": 45097156608,
+  "waves": [
+    {
+      "waveId": "wave-1",
+      "waveName": "Wave 1 - Low Risk Pilot",
+      "order": 1,
+      "itemCount": 2,
+      "estimatedFiles": 180,
+      "estimatedStorageBytes": 536870912,
+      "estimatedDurationMinutes": 35,
+      "riskLevel": "Low",
+      "readinessScore": 92,
+      "expectedWarnings": 0,
+      "expectedFailures": 0,
+      "steps": [
+        { "stepId": "wave-1-step-1", "stepName": "Pre-wave validation", "order": 1, "description": "Pre-wave validation for Wave 1.", "estimatedDurationMinutes": 5, "status": "simulated", "dependencies": [], "expectedIssues": [] }
+      ]
+    }
+  ],
+  "expectedIssues": [
+    { "issueId": "issue-1", "severity": "Warning", "waveName": "Wave 3 - Restricted Content", "item": "Payroll Confidential", "description": "Restricted content requires approval.", "recommendedAction": "Approve restricted content before execution." }
+  ],
+  "checkpoints": ["Pre-wave validation", "Source accessibility check", "Target accessibility check", "Metadata mapping check", "Permission mapping check", "Content copy simulation", "Post-wave validation simulation", "Report generation"],
+  "assumptions": ["Simulation only. No files are copied."],
+  "recommendations": ["Review wave prerequisites before execution design."]
+}

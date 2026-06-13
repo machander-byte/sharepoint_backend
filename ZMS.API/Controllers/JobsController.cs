@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ZMS.API.Contracts;
 using ZMS.API.Contracts.Jobs;
 using ZMS.API.Extensions;
+using ZMS.API.Security;
 using ZMS.Application.Contracts;
 
 namespace ZMS.API.Controllers;
@@ -51,7 +52,7 @@ public class JobsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Operator)]
     public async Task<ActionResult<MigrationJobResponseDto>> Create(
         [FromBody] CreateMigrationJobRequestDto request,
         CancellationToken cancellationToken)
@@ -73,7 +74,7 @@ public class JobsController : ControllerBase
     }
 
     [HttpPost("{jobId:guid}/start")]
-    [Authorize]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Operator)]
     public async Task<IActionResult> Start(Guid jobId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -82,7 +83,7 @@ public class JobsController : ControllerBase
     }
 
     [HttpPost("{jobId:guid}/pause")]
-    [Authorize]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Operator)]
     public async Task<IActionResult> Pause(Guid jobId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -91,11 +92,38 @@ public class JobsController : ControllerBase
     }
 
     [HttpPost("{jobId:guid}/resume")]
-    [Authorize]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Operator)]
     public async Task<IActionResult> Resume(Guid jobId, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
         await _migrationService.ResumeJobAsync(jobId, userId, cancellationToken);
         return Accepted();
+    }
+
+    [HttpPost("{jobId:guid}/cancel")]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Operator)]
+    public async Task<IActionResult> Cancel(Guid jobId, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        await _migrationService.CancelJobAsync(jobId, userId, cancellationToken);
+        return Accepted();
+    }
+
+    [HttpPost("{jobId:guid}/retry")]
+    [Authorize(Policy = ZmsAuthorizationPolicies.Operator)]
+    public async Task<IActionResult> Retry(Guid jobId, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        await _migrationService.RetryJobAsync(jobId, userId, cancellationToken);
+        return Accepted();
+    }
+
+    [HttpGet("{jobId:guid}/timeline")]
+    [Authorize]
+    public async Task<IActionResult> Timeline(Guid jobId, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var timeline = await _migrationService.GetTimelineAsync(jobId, userId, cancellationToken);
+        return Ok(timeline);
     }
 }
