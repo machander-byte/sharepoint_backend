@@ -1,6 +1,6 @@
 # ZMS UI V2 Browser Smoke Test
 
-Status date: 2026-06-10
+Status date: 2026-06-13
 
 ## Scope
 
@@ -95,10 +95,13 @@ dotnet test .\Zettalogix.MigrationSuite.sln --no-build
 | Page / Flow | Result |
 | --- | --- |
 | `https://zms-migration-suite.vercel.app/login` | Loads |
-| Unauthenticated `/v2` | Redirected to `/login` before Supabase browser auth completed |
-| Authenticated `/v2` | Loads after browser auth completed |
-| Authenticated `/v2/command-center` | Loads, but deployed shell appears stale versus local UI V2 build |
+| Clean-session `/login` | Loads V2 login design and visible build fingerprint `ZMS frontend build af0ae68` |
+| Unauthenticated `/v2` | Redirects to `/login` |
+| Unauthenticated `/v2/monitor` | Redirects to `/login` |
+| Session-bearing `/v2` | Loads current UI V2 shell |
+| Session-bearing `/v2/monitor` | Loads current UI V2 shell |
+| Session-bearing `/v2/command-center` | Loads current UI V2 shell |
 | Backend API data | Blocked because Render backend is failing |
-| Console | No warning/error messages captured on the login redirect check |
+| Browser page errors | 0 page errors observed during latest V2 shell check |
 
-Deployment note: the local build contains the current UI V2 route integration and was pushed to GitHub `master`; the application source commit is `8f1663d`. The production Vercel deployment remains stale because the current Vercel Git integration cannot see the correct repository, `machander-byte/sharepoint_backend`, and the Vercel CLI token is invalid. Redeploy the frontend after Render backend health is restored and Vercel is connected to the correct repository/root directory.
+Deployment note: the local build contains the current UI V2 route integration and was pushed to GitHub `master`; the application source commit is `af0ae68`. The production Vercel alias now points to a Vercel CLI/manual deployment from `ZettalogixMigrationSuite/ZMS.WebUI`. API-backed V2 validation remains blocked by the Render backend database authentication failure.

@@ -119,7 +119,9 @@ Mark the product ready for company review only when:
 
 ## 2026-06-13 Deployment Security Addendum
 
-- Render backend is failing because PostgreSQL authentication is rejected for the configured database user. Rotate or update `ConnectionStrings__ZmsDatabase` in Render.
+- Render backend is failing because PostgreSQL authentication is rejected for the configured database user. The Render connection string now has the expected Supabase pooler host, port `6543`, and scoped user shape, but the database password is not accepted.
+- ROTATE REQUIRED: the Supabase database password was pasted during deployment work and must be treated as exposed before company submission. Do not reuse it as the final company-review credential.
+- ROTATE REQUIRED: a backend connection string was visible in tool/browser output during deployment troubleshooting. Do not share those logs or screenshots externally.
 - Supabase Advisor shows public-table RLS findings. Startup hardening now enables RLS for ZMS public tables after schema creation and migrations; verify the Advisor result after backend redeploy.
 - `npm audit` reports 6 frontend dependency findings: 5 moderate and 1 high. The high finding is in the Vite/esbuild dependency chain and requires a dependency upgrade plan.
 - A conservative secret-pattern scan reported only placeholders, test redaction strings, or documented variable names by path/line; no secret values were printed in this report.
