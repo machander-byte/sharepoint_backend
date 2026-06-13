@@ -29,6 +29,7 @@ Frontend deployment target for `ZettalogixMigrationSuite/ZMS.WebUI`.
 | Vercel CLI auth | Blocked: configured token is invalid |
 | Production frontend URL | `https://zms-migration-suite.vercel.app` |
 | Production URL HTTP check | 200 OK |
+| Current full-project Git push | `master` at `8f1663d` |
 | `/login` | Loads |
 | `/v2` authenticated | Loads, but deployed shell appears stale versus local UI V2 build |
 | `/v2/command-center` authenticated | Loads, but deployed shell appears stale versus local UI V2 build |
@@ -39,7 +40,20 @@ Frontend deployment target for `ZettalogixMigrationSuite/ZMS.WebUI`.
 
 The deployed frontend bundle currently references `https://sharepoint-backend-g5vc.onrender.com` as its backend API base. That backend is failing to start, so deployed API calls cannot be verified.
 
-The Vercel dashboard shows `zms-migration-suite`, but CLI deployment is blocked by an invalid token. The dashboard also shows Git connection work is still needed for that project. A new production deployment was not performed from this session.
+The Vercel dashboard shows `zms-migration-suite`, but CLI deployment is blocked by an invalid token. The project was briefly connected to the wrong GitHub repository, `badugujashwanth-create/Cricket_chatbot_Backend`; that wrong connection has been removed.
+
+The correct GitHub repository for this working tree is `machander-byte/sharepoint_backend`, but it is not visible in the Vercel Git picker for the current Vercel account/installation. A new production deployment was not performed from this session.
+
+Required Vercel Git target when access is granted:
+
+| Setting | Value |
+| --- | --- |
+| Repository | `machander-byte/sharepoint_backend` |
+| Branch | `master` |
+| Root directory | `ZettalogixMigrationSuite/ZMS.WebUI` |
+| Install command | `npm ci` |
+| Build command | `npm run build` |
+| Output directory | `dist` |
 
 ## Required Frontend Env
 
@@ -55,4 +69,4 @@ The Vercel dashboard shows `zms-migration-suite`, but CLI deployment is blocked 
 
 ## Decision
 
-Vercel frontend is reachable but not deployment-validated. Redeploy after the Render backend is healthy and either fix Vercel CLI auth or connect the project to the correct Git repository/branch.
+Vercel frontend is reachable but not deployment-validated. Redeploy after the Render backend is healthy and either fix Vercel CLI auth or grant Vercel access to the correct repository.

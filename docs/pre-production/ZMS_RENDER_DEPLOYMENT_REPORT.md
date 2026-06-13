@@ -6,6 +6,8 @@ Status date: 2026-06-13
 
 Backend deployment target for `sharepoint_backend/Zettalogix.MigrationSuite.sln` and `sharepoint_backend/Dockerfile.api`.
 
+The full current project was pushed to GitHub `master` at `8f1663d`. Because Render is connected to `main` and expects the backend at repository root, the current `sharepoint_backend` subtree was also pushed to GitHub `main` at `10c3533`.
+
 ## Local Verification
 
 | Check | Result |
@@ -26,6 +28,8 @@ Backend deployment target for `sharepoint_backend/Zettalogix.MigrationSuite.sln`
 | Plan | Free |
 | Repository | `machander-byte/sharepoint_backend` |
 | Connected branch | `main` |
+| Deployed source branch | `main` backend subtree from current project |
+| Current backend source commit | `10c3533` |
 | Render backend URL | `https://sharepoint-backend-g5vc.onrender.com` |
 | Dashboard status | Failed |
 
@@ -39,9 +43,11 @@ Backend deployment target for `sharepoint_backend/Zettalogix.MigrationSuite.sln`
 
 ## Failure Evidence
 
-Recent Render logs show the API exits with status 134 during startup after PostgreSQL authentication fails for the configured database user. No password value was printed or copied.
+Recent Render logs show the current API exits with status 134 during startup after PostgreSQL authentication fails for the configured database user. No password value was printed or copied.
 
 Required action: update or rotate `ConnectionStrings__ZmsDatabase` in Render, then redeploy.
+
+Azure option: the backend uses the generic Npgsql/Postgres provider, so Render can use Azure Database for PostgreSQL by replacing `ConnectionStrings__ZmsDatabase` with an Azure PostgreSQL connection string. Azure Blob Storage is not a drop-in replacement for this database connection.
 
 ## Environment Status
 

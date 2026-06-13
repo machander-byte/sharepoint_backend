@@ -4,7 +4,7 @@ Status date: 2026-06-13
 
 ## Summary
 
-Local build validation passed, but hosted deployment is not ready. Render backend is failing at startup because Supabase/Postgres authentication is rejected. Vercel frontend is reachable, but it is stale versus the local UI V2 build and cannot validate API calls while the backend is down.
+Local build validation passed and the current project source was pushed to GitHub. Render is now pointed at the current backend split, but the hosted API is still failing at startup because Postgres authentication is rejected. Vercel frontend is reachable, but production is stale versus the local UI V2 build and cannot validate API calls while the backend is down.
 
 ## Required Final Response Fields
 
@@ -15,10 +15,12 @@ Local build validation passed, but hosted deployment is not ready. Render backen
 | Local frontend build | Passed |
 | Render deployment status | Failed |
 | Render backend URL | `https://sharepoint-backend-g5vc.onrender.com` |
+| Current full-project Git push | `master` at `8f1663d` |
+| Current Render backend split push | `main` at `10c3533` |
 | Backend `/api/health` | Timed out / unreachable |
 | Backend `/api/status` | Unreachable |
 | Backend `/api/version` | Unreachable |
-| Vercel deployment status | Existing deployment reachable, new deployment not performed |
+| Vercel deployment status | Existing deployment reachable; Git link corrected by removing the wrong repository, but new production deployment not performed |
 | Vercel frontend URL | `https://zms-migration-suite.vercel.app` |
 | Login test | Passed |
 | Authenticated `/v2` test | Loads, but deployed shell appears stale versus local UI V2 build |
@@ -44,8 +46,9 @@ Local build validation passed, but hosted deployment is not ready. Render backen
 ## Remaining Blockers
 
 - Rotate or update Render `ConnectionStrings__ZmsDatabase`.
+- Alternative database path: set Render `ConnectionStrings__ZmsDatabase` to a valid Azure Database for PostgreSQL connection string if Supabase Postgres should be replaced. Supabase Auth can remain configured separately for login.
 - Redeploy Render backend and verify `/api/health`, `/api/status`, and `/api/version`.
-- Fix Vercel CLI token or connect `zms-migration-suite` to the correct Git repository/branch.
+- Fix Vercel CLI token or grant Vercel access to `machander-byte/sharepoint_backend`, then connect `zms-migration-suite` to that repository with root directory `ZettalogixMigrationSuite/ZMS.WebUI`.
 - Redeploy Vercel from the current local build.
 - Recheck CORS after backend and frontend are both live.
 - Verify Microsoft Entra Graph permissions and SharePoint target access.
@@ -58,4 +61,4 @@ Not ready.
 
 ## Exact Next Action
 
-Update/rotate the Supabase pooler password in Render `ConnectionStrings__ZmsDatabase`, redeploy the Render backend, and verify `/api/health` before redeploying the frontend.
+Update Render `ConnectionStrings__ZmsDatabase` with either a valid Supabase pooler connection string or a valid Azure Database for PostgreSQL connection string, redeploy the Render backend, and verify `/api/health` before redeploying the frontend.
