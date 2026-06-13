@@ -6,7 +6,7 @@ Status date: 2026-06-13
 
 Backend deployment target for `sharepoint_backend/Zettalogix.MigrationSuite.sln` and `sharepoint_backend/Dockerfile.api`.
 
-The full current project was pushed to GitHub `master`; the latest branch head is `9ab159e`, with the application source changes in `8f1663d`. Because Render is connected to `main` and expects the backend at repository root, the current `sharepoint_backend` subtree was also pushed to GitHub `main` at `10c3533`.
+The full current project was pushed to GitHub `master`, with the application source changes in `8f1663d`. Because Render is connected to `main` and expects the backend at repository root, the current `sharepoint_backend` subtree was also pushed to GitHub `main` at `10c3533`.
 
 ## Local Verification
 
