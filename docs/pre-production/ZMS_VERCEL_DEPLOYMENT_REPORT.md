@@ -29,7 +29,8 @@ Frontend deployment target for `ZettalogixMigrationSuite/ZMS.WebUI`.
 | Vercel CLI auth | Blocked: configured token is invalid |
 | Production frontend URL | `https://zms-migration-suite.vercel.app` |
 | Production URL HTTP check | 200 OK |
-| Current full-project Git push | `master` at `8f1663d` |
+| Current full-project Git branch | `master` at `9ab159e` |
+| Application source commit | `8f1663d` |
 | `/login` | Loads |
 | `/v2` authenticated | Loads, but deployed shell appears stale versus local UI V2 build |
 | `/v2/command-center` authenticated | Loads, but deployed shell appears stale versus local UI V2 build |

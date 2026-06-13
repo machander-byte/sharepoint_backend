@@ -15,7 +15,8 @@ Local build validation passed and the current project source was pushed to GitHu
 | Local frontend build | Passed |
 | Render deployment status | Failed |
 | Render backend URL | `https://sharepoint-backend-g5vc.onrender.com` |
-| Current full-project Git push | `master` at `8f1663d` |
+| Current full-project Git branch | `master` at `9ab159e` |
+| Application source commit | `8f1663d` |
 | Current Render backend split push | `main` at `10c3533` |
 | Backend `/api/health` | Timed out / unreachable |
 | Backend `/api/status` | Unreachable |

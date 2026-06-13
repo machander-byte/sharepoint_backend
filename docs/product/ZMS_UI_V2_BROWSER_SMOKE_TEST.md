@@ -101,4 +101,4 @@ dotnet test .\Zettalogix.MigrationSuite.sln --no-build
 | Backend API data | Blocked because Render backend is failing |
 | Console | No warning/error messages captured on the login redirect check |
 
-Deployment note: the local build contains the current UI V2 route integration and was pushed to GitHub `master` at `8f1663d`. The production Vercel deployment remains stale because the current Vercel Git integration cannot see the correct repository, `machander-byte/sharepoint_backend`, and the Vercel CLI token is invalid. Redeploy the frontend after Render backend health is restored and Vercel is connected to the correct repository/root directory.
+Deployment note: the local build contains the current UI V2 route integration and was pushed to GitHub `master`; the application source commit is `8f1663d` and the latest branch head is `9ab159e`. The production Vercel deployment remains stale because the current Vercel Git integration cannot see the correct repository, `machander-byte/sharepoint_backend`, and the Vercel CLI token is invalid. Redeploy the frontend after Render backend health is restored and Vercel is connected to the correct repository/root directory.
