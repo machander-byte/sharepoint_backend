@@ -1,14 +1,18 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 
-let browserClient: ReturnType<typeof createBrowserClient> | null = null
+let browserClient: SupabaseClient | null = null;
 
 export function createClient() {
   if (!browserClient) {
-    browserClient = createBrowserClient(
-      import.meta.env.VITE_SUPABASE_URL!,
-      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY!
-    )
+    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
+    const supabaseKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined)?.trim();
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Supabase frontend URL and publishable key must be configured.");
+    }
+
+    browserClient = createSupabaseClient(supabaseUrl, supabaseKey);
   }
 
-  return browserClient
+  return browserClient;
 }
