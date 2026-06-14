@@ -39,10 +39,7 @@ public class HealthController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
-        var database = await GetDatabaseStatusAsync(cancellationToken);
-        var schema = database.Healthy
-            ? await _schemaReadinessChecker.CheckAsync(cancellationToken)
-            : DatabaseSchemaReadinessNotChecked(database.Provider);
+        var (database, schema) = await GetDatabaseAndSchemaStatusAsync(cancellationToken);
         var status = database.Healthy && schema.Ready ? "Healthy" : "Degraded";
 
         return Ok(new
@@ -87,7 +84,7 @@ public class HealthController : ControllerBase
     [HttpGet("/api/status")]
     public async Task<IActionResult> Status(CancellationToken cancellationToken)
     {
-        var database = await GetDatabaseStatusAsync(cancellationToken);
+        var (database, schema) = await GetDatabaseAndSchemaStatusAsync(cancellationToken);
         var queue = new
         {
             _queueDiagnostics.Provider,
@@ -99,9 +96,6 @@ public class HealthController : ControllerBase
         };
 
         var startup = _databaseStartupState.Snapshot;
-        var schema = database.Healthy
-            ? await _schemaReadinessChecker.CheckAsync(cancellationToken)
-            : DatabaseSchemaReadinessNotChecked(database.Provider);
         var queueHealthy = _queueDiagnostics.DeadLetterCount == 0;
         var healthy = database.Healthy && schema.Ready && queueHealthy;
         var status = healthy ? "Healthy" : "Degraded";
@@ -135,36 +129,16 @@ public class HealthController : ControllerBase
         return new DeploymentFingerprint("ZMS", "ZMS.API", _environment.EnvironmentName, commit, buildTime);
     }
 
-    private async Task<DependencyStatus> GetDatabaseStatusAsync(CancellationToken cancellationToken)
+    private async Task<(DependencyStatus Database, DatabaseSchemaReadinessSnapshot Schema)> GetDatabaseAndSchemaStatusAsync(CancellationToken cancellationToken)
     {
-        try
-        {
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
+        var schema = await _schemaReadinessChecker.CheckAsync(cancellationToken);
+        var databaseConnected = schema.Ready || schema.Status == "MissingRequiredTables";
+        var database = new DependencyStatus(
+            databaseConnected,
+            schema.Provider,
+            databaseConnected ? "Connected" : schema.Message);
 
-            var canConnect = await _dbContext.Database.CanConnectAsync(timeoutCts.Token);
-            return new DependencyStatus(canConnect, _dbContext.Database.ProviderName ?? "unknown", canConnect ? "Connected" : "Connection failed");
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return new DependencyStatus(false, _dbContext.Database.ProviderName ?? "unknown", "Timed out after 5 seconds");
-        }
-        catch (Exception ex)
-        {
-            return new DependencyStatus(false, _dbContext.Database.ProviderName ?? "unknown", ex.GetType().Name);
-        }
-    }
-
-    private static DatabaseSchemaReadinessSnapshot DatabaseSchemaReadinessNotChecked(string provider)
-    {
-        return new DatabaseSchemaReadinessSnapshot(
-            Ready: false,
-            Status: "NotChecked",
-            Provider: provider,
-            Message: "Schema readiness was not checked because database connectivity is unavailable.",
-            MissingTables: [],
-            ErrorType: null,
-            LastCheckedUtc: DateTimeOffset.UtcNow);
+        return (database, schema);
     }
 
     private sealed record DependencyStatus(bool Healthy, string Provider, string Message);
