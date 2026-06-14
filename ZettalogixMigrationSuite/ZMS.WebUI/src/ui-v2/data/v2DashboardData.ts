@@ -1,5 +1,6 @@
 export type V2PageId =
   | "command-center"
+  | "tutorial"
   | "sources"
   | "destinations"
   | "assess"
@@ -20,6 +21,7 @@ export interface V2PageDefinition {
 
 export const v2Pages: V2PageDefinition[] = [
   { id: "command-center", label: "Command Center", group: "Operate" },
+  { id: "tutorial", label: "Tutorial", group: "Operate" },
   { id: "sources", label: "Sources", group: "Operate" },
   { id: "destinations", label: "Destinations", group: "Operate" },
   { id: "assess", label: "Assess", group: "Prepare" },

@@ -7,6 +7,7 @@ import {
   FolderInput,
   Gauge,
   HardDrive,
+  HelpCircle,
   Layers3,
   ListChecks,
   Rocket,
@@ -17,6 +18,7 @@ import { type V2PageId, v2Pages } from "../data/v2DashboardData";
 
 const pageIcons = {
   "command-center": Gauge,
+  tutorial: HelpCircle,
   sources: CloudUpload,
   destinations: HardDrive,
   assess: ListChecks,

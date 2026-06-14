@@ -31,10 +31,10 @@ export function V2Monitor({ runtime, snapshot }: V2MonitorProps): JSX.Element {
         <V2Card title="Queue" className="zms-v2-span-4">
           <Activity size={28} color="var(--v2-success)" />
           <p className="zms-v2-copy">
-            Adapter evidence reports the migration queue as {migrationEvidence.queue.toLowerCase()} after the verified run.
+            Queue state is shown only from the live API. If the API is degraded, no fallback queue is treated as real.
           </p>
           <div style={{ marginTop: 16 }}>
-            <V2StatusPill tone="success">{runtime.queueStatus ?? migrationEvidence.queue}</V2StatusPill>
+            <V2StatusPill tone={snapshot.source === "api" ? "success" : "warning"}>{runtime.queueStatus ?? "No live queue data"}</V2StatusPill>
           </div>
         </V2Card>
 
@@ -49,21 +49,22 @@ export function V2Monitor({ runtime, snapshot }: V2MonitorProps): JSX.Element {
         </V2Card>
 
         <V2Card title="Observed status" className="zms-v2-span-6">
-          <V2EvidenceRow label="API status source" value={runtime.apiStatus === "Healthy" ? "Live /api/status" : "Adapter fallback"} tone={runtime.apiStatus === "Healthy" ? "success" : "warning"} />
+          <V2EvidenceRow label="API status source" value={runtime.apiStatus === "Healthy" ? "Live /api/status" : "Deployed diagnostics"} tone={runtime.apiStatus === "Healthy" ? "success" : "warning"} />
           <V2EvidenceRow label="API version" value={runtime.version ?? "Not available"} tone={runtime.version ? "success" : "warning"} />
           <V2EvidenceRow label="Database provider" value={runtime.databaseProvider ?? "Not available"} tone={runtime.databaseProvider ? "success" : "warning"} />
-          <V2EvidenceRow label="Read-only data source" value={snapshot.source === "api" ? "Live API" : "Fallback adapter"} tone={snapshot.source === "api" ? "success" : "warning"} />
+          <V2EvidenceRow label="Database startup" value={runtime.databaseStartupStatus ?? "Not reported"} tone={runtime.apiStatus === "Healthy" ? "success" : "warning"} />
+          <V2EvidenceRow label="Read-only data source" value={snapshot.source === "api" ? "Live API" : "No fallback records shown"} tone={snapshot.source === "api" ? "success" : "warning"} />
         </V2Card>
 
         <V2Card title="Read-only API snapshot" className="zms-v2-span-6">
-          <V2EvidenceRow label="Connections" value={`${snapshot.connectionCount}`} tone="success" />
-          <V2EvidenceRow label="Latest job" value={snapshot.latestJobStatus} tone={snapshot.latestJobStatus === "Passed" ? "success" : "neutral"} />
+          <V2EvidenceRow label="Connections" value={`${snapshot.connectionCount}`} tone={snapshot.source === "api" ? "success" : "warning"} />
+          <V2EvidenceRow label="Latest job" value={snapshot.latestJobStatus} tone={snapshot.source === "api" ? "success" : "warning"} />
           <V2EvidenceRow label="Readiness" value={`${snapshot.latestReadinessScore} / ${snapshot.latestReadinessStatus}`} tone="neutral" />
-          <V2EvidenceRow label="Reports" value={`${snapshot.reportCount}`} tone="success" />
-          <V2EvidenceRow label="AI recommendations" value={`${snapshot.aiRecommendationCount}`} tone="success" />
+          <V2EvidenceRow label="Reports" value={`${snapshot.reportCount}`} tone={snapshot.source === "api" ? "success" : "warning"} />
+          <V2EvidenceRow label="AI recommendations" value={`${snapshot.aiRecommendationCount}`} tone={snapshot.source === "api" ? "success" : "warning"} />
         </V2Card>
 
-        <V2Card title="Operator timeline" className="zms-v2-span-6">
+        <V2Card title="Historical validation evidence" className="zms-v2-span-6">
           <div className="zms-v2-row">
             <span><Database size={16} /> Stage 1 Graph byte verification</span>
             <V2StatusPill tone="success">Passed</V2StatusPill>

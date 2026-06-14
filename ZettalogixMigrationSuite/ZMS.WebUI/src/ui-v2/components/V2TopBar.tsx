@@ -10,7 +10,7 @@ interface V2TopBarProps {
 
 export function V2TopBar({ activePage, runtime }: V2TopBarProps): JSX.Element {
   const title = v2Pages.find((page) => page.id === activePage)?.label ?? "Command Center";
-  const tone = runtime.apiStatus === "Healthy" ? "success" : runtime.apiStatus === "Unavailable" ? "warning" : "neutral";
+  const tone = runtime.apiStatus === "Healthy" ? "success" : runtime.apiStatus === "Unavailable" || runtime.apiStatus === "Degraded" ? "warning" : "neutral";
 
   return (
     <header className="zms-v2-topbar">

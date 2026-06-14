@@ -15,6 +15,7 @@ import { V2Plan } from "./pages/V2Plan";
 import { V2Reports } from "./pages/V2Reports";
 import { V2Settings } from "./pages/V2Settings";
 import { V2Sources } from "./pages/V2Sources";
+import { V2Tutorial } from "./pages/V2Tutorial";
 import { V2Validate } from "./pages/V2Validate";
 import "./styles/v2-theme.css";
 
@@ -24,7 +25,9 @@ const fallbackSnapshot = getFallbackV2Snapshot();
 function renderPage(page: V2PageId, runtime: V2RuntimeStatus, snapshot: V2ReadOnlySnapshot): JSX.Element {
   switch (page) {
     case "command-center":
-      return <V2CommandCenter />;
+      return <V2CommandCenter runtime={runtime} snapshot={snapshot} />;
+    case "tutorial":
+      return <V2Tutorial runtime={runtime} snapshot={snapshot} />;
     case "sources":
       return <V2Sources />;
     case "destinations":
@@ -48,7 +51,7 @@ function renderPage(page: V2PageId, runtime: V2RuntimeStatus, snapshot: V2ReadOn
     case "settings":
       return <V2Settings />;
     default:
-      return <V2CommandCenter />;
+      return <V2CommandCenter runtime={runtime} snapshot={snapshot} />;
   }
 }
 
