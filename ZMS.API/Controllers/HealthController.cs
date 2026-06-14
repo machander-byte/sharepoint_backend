@@ -18,29 +18,40 @@ public class HealthController : ControllerBase
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly DatabaseStartupState _databaseStartupState;
+    private readonly DatabaseSchemaReadinessChecker _schemaReadinessChecker;
 
     public HealthController(
         IQueueDiagnostics queueDiagnostics,
         ZmsDbContext dbContext,
         IWebHostEnvironment environment,
         IConfiguration configuration,
-        DatabaseStartupState databaseStartupState)
+        DatabaseStartupState databaseStartupState,
+        DatabaseSchemaReadinessChecker schemaReadinessChecker)
     {
         _queueDiagnostics = queueDiagnostics;
         _dbContext = dbContext;
         _environment = environment;
         _configuration = configuration;
         _databaseStartupState = databaseStartupState;
+        _schemaReadinessChecker = schemaReadinessChecker;
     }
 
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
+        var database = await GetDatabaseStatusAsync(cancellationToken);
+        var schema = database.Healthy
+            ? await _schemaReadinessChecker.CheckAsync(cancellationToken)
+            : DatabaseSchemaReadinessNotChecked(database.Provider);
+        var status = database.Healthy && schema.Ready ? "Healthy" : "Degraded";
+
         return Ok(new
         {
-            Status = _databaseStartupState.Snapshot.Status == "Succeeded" ? "Healthy" : "Degraded",
+            Status = status,
             UtcNow = DateTimeOffset.UtcNow,
             DatabaseStartup = _databaseStartupState.Snapshot,
+            Database = database,
+            Schema = schema,
             Queue = new
             {
                 _queueDiagnostics.Provider,
@@ -88,7 +99,11 @@ public class HealthController : ControllerBase
         };
 
         var startup = _databaseStartupState.Snapshot;
-        var healthy = database.Healthy && startup.Status == "Succeeded";
+        var schema = database.Healthy
+            ? await _schemaReadinessChecker.CheckAsync(cancellationToken)
+            : DatabaseSchemaReadinessNotChecked(database.Provider);
+        var queueHealthy = _queueDiagnostics.DeadLetterCount == 0;
+        var healthy = database.Healthy && schema.Ready && queueHealthy;
         var status = healthy ? "Healthy" : "Degraded";
 
         return StatusCode(healthy ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable, new
@@ -101,6 +116,7 @@ public class HealthController : ControllerBase
             Deployment = GetDeploymentFingerprint(),
             DatabaseStartup = startup,
             Database = database,
+            Schema = schema,
             Queue = queue
         });
     }
@@ -137,6 +153,18 @@ public class HealthController : ControllerBase
         {
             return new DependencyStatus(false, _dbContext.Database.ProviderName ?? "unknown", ex.GetType().Name);
         }
+    }
+
+    private static DatabaseSchemaReadinessSnapshot DatabaseSchemaReadinessNotChecked(string provider)
+    {
+        return new DatabaseSchemaReadinessSnapshot(
+            Ready: false,
+            Status: "NotChecked",
+            Provider: provider,
+            Message: "Schema readiness was not checked because database connectivity is unavailable.",
+            MissingTables: [],
+            ErrorType: null,
+            LastCheckedUtc: DateTimeOffset.UtcNow);
     }
 
     private sealed record DependencyStatus(bool Healthy, string Provider, string Message);
