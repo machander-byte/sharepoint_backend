@@ -156,35 +156,59 @@ app.Run();
 
 static async Task EnsureDatabaseCreatedAsync(IServiceProvider services, ILogger logger, IConfiguration configuration)
 {
-    using var scope = services.CreateScope();
+    var scope = services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<ZmsDbContext>();
     var startupState = scope.ServiceProvider.GetRequiredService<DatabaseStartupState>();
     var provider = dbContext.Database.ProviderName ?? "unknown";
+    var startupTimeoutSeconds = configuration.GetValue<int?>("Database:StartupTimeoutSeconds") ?? 45;
 
     startupState.MarkStarting(provider);
 
+    var initializationTask = RunDatabaseInitializationCoreAsync(dbContext, logger);
+
     try
     {
-        if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(startupTimeoutSeconds));
+        var completedTask = await Task.WhenAny(initializationTask, timeoutTask);
+
+        if (completedTask != initializationTask)
         {
-            await EnsurePostgresSchemaAsync(dbContext);
-            await EnsureEnterpriseTablesAsync(dbContext);
-            await EnsureAuditLogsTableAsync(dbContext);
-            await ApplyMigrationsIfSafeAsync(dbContext, logger);
-            await EnablePostgresRowLevelSecurityAsync(dbContext);
-            startupState.MarkSucceeded(provider);
+            var timeout = new TimeoutException($"Database startup initialization exceeded {startupTimeoutSeconds} seconds.");
+            startupState.MarkFailed(provider, timeout);
+            logger.LogError(timeout, "Database startup initialization exceeded the configured timeout. The API remains available in degraded mode.");
+
+            _ = initializationTask.ContinueWith(task =>
+            {
+                try
+                {
+                    if (task.IsCompletedSuccessfully)
+                    {
+                        startupState.MarkSucceeded(provider);
+                        logger.LogInformation("Database startup initialization completed after the initial timeout.");
+                    }
+                    else if (task.Exception is not null)
+                    {
+                        var exception = task.Exception.GetBaseException();
+                        startupState.MarkFailed(provider, exception);
+                        logger.LogError(exception, "Database startup initialization failed after the initial timeout.");
+                    }
+                }
+                finally
+                {
+                    scope.Dispose();
+                }
+            }, TaskScheduler.Default);
+
             return;
         }
 
-        await dbContext.Database.EnsureCreatedAsync();
-        await EnsureMigrationJobColumnsAsync(dbContext);
-        await EnsureEnterpriseTablesAsync(dbContext);
-        await EnsureAuditLogsTableAsync(dbContext);
-        await ApplyMigrationsIfSafeAsync(dbContext, logger);
+        await initializationTask;
         startupState.MarkSucceeded(provider);
+        scope.Dispose();
     }
     catch (Exception ex)
     {
+        scope.Dispose();
         startupState.MarkFailed(provider, ex);
         logger.LogError(ex, "Database startup initialization failed. The API will start in degraded mode so diagnostics endpoints remain available.");
 
@@ -193,6 +217,25 @@ static async Task EnsureDatabaseCreatedAsync(IServiceProvider services, ILogger 
             throw;
         }
     }
+}
+
+static async Task RunDatabaseInitializationCoreAsync(ZmsDbContext dbContext, ILogger logger)
+{
+    if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+    {
+        await EnsurePostgresSchemaAsync(dbContext);
+        await EnsureEnterpriseTablesAsync(dbContext);
+        await EnsureAuditLogsTableAsync(dbContext);
+        await ApplyMigrationsIfSafeAsync(dbContext, logger);
+        await EnablePostgresRowLevelSecurityAsync(dbContext);
+        return;
+    }
+
+    await dbContext.Database.EnsureCreatedAsync();
+    await EnsureMigrationJobColumnsAsync(dbContext);
+    await EnsureEnterpriseTablesAsync(dbContext);
+    await EnsureAuditLogsTableAsync(dbContext);
+    await ApplyMigrationsIfSafeAsync(dbContext, logger);
 }
 
 static async Task ApplyMigrationsIfSafeAsync(ZmsDbContext dbContext, ILogger logger)
