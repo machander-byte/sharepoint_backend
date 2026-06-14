@@ -111,6 +111,14 @@ public sealed class DatabaseSchemaReadinessChecker
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
+            var stale = TryGetCachedSnapshot(
+                provider,
+                configuration.GetValue<int?>("Database:SchemaReadinessStaleSeconds") ?? 300);
+            if (stale?.Ready == true)
+            {
+                return stale;
+            }
+
             return new DatabaseSchemaReadinessSnapshot(
                 Ready: false,
                 Status: "TimedOut",
@@ -149,6 +157,11 @@ public sealed class DatabaseSchemaReadinessChecker
 
     private static void CacheSnapshot(DatabaseSchemaReadinessSnapshot snapshot)
     {
+        if (!snapshot.Ready && snapshot.Status != "MissingRequiredTables")
+        {
+            return;
+        }
+
         lock (CacheSyncRoot)
         {
             cachedSnapshot = snapshot;
