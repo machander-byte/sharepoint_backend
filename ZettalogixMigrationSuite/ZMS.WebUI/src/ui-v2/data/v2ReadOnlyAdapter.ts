@@ -82,18 +82,10 @@ export async function loadV2ReadOnlySnapshot(): Promise<V2ReadOnlySnapshot> {
 
   const [
     connections,
-    latestJob,
-    readiness,
-    plan,
-    workflow,
     reports,
     aiRecommendations
   ] = await Promise.all([
     settle("connections", () => zmsApi.getConnections(), errors),
-    settle("latest migration job", () => zmsApi.getLatestMigrationExecutionJob(), errors),
-    settle("latest readiness", () => zmsApi.getLatestReadinessAssessment(), errors),
-    settle("latest migration plan", () => zmsApi.getLatestMigrationPlan(), errors),
-    settle("latest workflow validation", () => zmsApi.getLatestWorkflowValidation(), errors),
     settle("reports", () => zmsApi.getReports(), errors),
     settle("AI recommendations", () => zmsApi.getAIRecommendations(), errors)
   ]);
@@ -106,12 +98,12 @@ export async function loadV2ReadOnlySnapshot(): Promise<V2ReadOnlySnapshot> {
     source: errors.length === 0 && runtime.apiStatus === "Healthy" ? "api" : "fallback",
     runtime,
     connectionCount,
-    latestJobName: latestJob?.jobId ? `Execution job ${latestJob.jobId.slice(0, 8)}` : fallbackSnapshot.latestJobName,
-    latestJobStatus: latestJob?.status ?? fallbackSnapshot.latestJobStatus,
-    latestReadinessScore: typeof readiness?.readinessScore === "number" ? `${readiness.readinessScore}` : fallbackSnapshot.latestReadinessScore,
-    latestReadinessStatus: readiness?.riskLevel ?? readiness?.status ?? fallbackSnapshot.latestReadinessStatus,
-    latestPlanStatus: plan?.status ?? fallbackSnapshot.latestPlanStatus,
-    latestWorkflowStatus: workflow?.overallResult ?? workflow?.status ?? fallbackSnapshot.latestWorkflowStatus,
+    latestJobName: fallbackSnapshot.latestJobName,
+    latestJobStatus: fallbackSnapshot.latestJobStatus,
+    latestReadinessScore: fallbackSnapshot.latestReadinessScore,
+    latestReadinessStatus: fallbackSnapshot.latestReadinessStatus,
+    latestPlanStatus: fallbackSnapshot.latestPlanStatus,
+    latestWorkflowStatus: fallbackSnapshot.latestWorkflowStatus,
     reportCount,
     aiRecommendationCount,
     errors
