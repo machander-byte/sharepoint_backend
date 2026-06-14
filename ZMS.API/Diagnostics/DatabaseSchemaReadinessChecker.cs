@@ -107,10 +107,32 @@ public sealed class DatabaseSchemaReadinessChecker
             return await QueryExistingTablesAsync(
                 """
                 SELECT table_name
-                FROM information_schema.tables
-                WHERE table_schema = 'public'
-                  AND table_type = 'BASE TABLE'
-                  AND table_name IN ('Connections','MigrationJobs','MigrationItems','Logs','DataProtectionKeys','DiscoveryRuns','DiscoveredSites','DiscoveredWebs','DiscoveredLibraries','DiscoveredLists','DiscoveredFolders','DiscoveredFiles','DiscoveredPermissions','DiscoveredSharingLinks','DiscoveredMetadataFields','DiscoveredContentTypes','RiskFindings','MigrationJobEvents','ValidationRuns','ValidationFindings','ValidationItemResults','AuditLogs');
+                FROM (
+                    VALUES
+                        ('Connections', to_regclass('public."Connections"')),
+                        ('MigrationJobs', to_regclass('public."MigrationJobs"')),
+                        ('MigrationItems', to_regclass('public."MigrationItems"')),
+                        ('Logs', to_regclass('public."Logs"')),
+                        ('DataProtectionKeys', to_regclass('public."DataProtectionKeys"')),
+                        ('DiscoveryRuns', to_regclass('public."DiscoveryRuns"')),
+                        ('DiscoveredSites', to_regclass('public."DiscoveredSites"')),
+                        ('DiscoveredWebs', to_regclass('public."DiscoveredWebs"')),
+                        ('DiscoveredLibraries', to_regclass('public."DiscoveredLibraries"')),
+                        ('DiscoveredLists', to_regclass('public."DiscoveredLists"')),
+                        ('DiscoveredFolders', to_regclass('public."DiscoveredFolders"')),
+                        ('DiscoveredFiles', to_regclass('public."DiscoveredFiles"')),
+                        ('DiscoveredPermissions', to_regclass('public."DiscoveredPermissions"')),
+                        ('DiscoveredSharingLinks', to_regclass('public."DiscoveredSharingLinks"')),
+                        ('DiscoveredMetadataFields', to_regclass('public."DiscoveredMetadataFields"')),
+                        ('DiscoveredContentTypes', to_regclass('public."DiscoveredContentTypes"')),
+                        ('RiskFindings', to_regclass('public."RiskFindings"')),
+                        ('MigrationJobEvents', to_regclass('public."MigrationJobEvents"')),
+                        ('ValidationRuns', to_regclass('public."ValidationRuns"')),
+                        ('ValidationFindings', to_regclass('public."ValidationFindings"')),
+                        ('ValidationItemResults', to_regclass('public."ValidationItemResults"')),
+                        ('AuditLogs', to_regclass('public."AuditLogs"'))
+                ) AS required(table_name, object_id)
+                WHERE object_id IS NOT NULL;
                 """,
                 cancellationToken);
         }
