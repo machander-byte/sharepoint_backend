@@ -123,13 +123,13 @@ public class HealthController : ControllerBase
 
     private DeploymentFingerprint GetDeploymentFingerprint()
     {
-        var commit = _configuration["ZMS_BUILD_COMMIT"]
+        var commit = _configuration["RENDER_GIT_COMMIT"]
+            ?? _configuration["ZMS_BUILD_COMMIT"]
             ?? _configuration["Build:Commit"]
-            ?? _configuration["RENDER_GIT_COMMIT"]
             ?? "unknown";
-        var buildTime = _configuration["ZMS_BUILD_TIME"]
+        var buildTime = _configuration["RENDER_DEPLOY_ID"]
+            ?? _configuration["ZMS_BUILD_TIME"]
             ?? _configuration["Build:Time"]
-            ?? _configuration["RENDER_DEPLOY_ID"]
             ?? "unknown";
 
         return new DeploymentFingerprint("ZMS", "ZMS.API", _environment.EnvironmentName, commit, buildTime);
