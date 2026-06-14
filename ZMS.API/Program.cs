@@ -149,7 +149,8 @@ app.MapGet("/", () => Results.Ok(new
 })).AllowAnonymous();
 app.MapControllers();
 
-await EnsureDatabaseCreatedAsync(app.Services, app.Logger, app.Configuration);
+_ = Task.Run(() => EnsureDatabaseCreatedAsync(app.Services, app.Logger, app.Configuration));
+app.Logger.LogInformation("Database startup initialization has been scheduled in the background.");
 
 app.Run();
 
