@@ -1,4 +1,3 @@
-import { zmsApi } from "../../services/zmsApi";
 import { migrationEvidence, reportExports } from "./v2DashboardData";
 
 export interface V2RuntimeStatus {
@@ -80,32 +79,18 @@ export async function loadV2ReadOnlySnapshot(): Promise<V2ReadOnlySnapshot> {
     };
   }
 
-  const [
-    connections,
-    reports,
-    aiRecommendations
-  ] = await Promise.all([
-    settle("connections", () => zmsApi.getConnections(), errors),
-    settle("reports", () => zmsApi.getReports(), errors),
-    settle("AI recommendations", () => zmsApi.getAIRecommendations(), errors)
-  ]);
-
-  const connectionCount = Array.isArray(connections) ? connections.length : 0;
-  const reportCount = Array.isArray(reports) ? reports.length : 0;
-  const aiRecommendationCount = Array.isArray(aiRecommendations) ? aiRecommendations.length : 0;
-
   return {
-    source: errors.length === 0 && runtime.apiStatus === "Healthy" ? "api" : "fallback",
+    source: "api",
     runtime,
-    connectionCount,
+    connectionCount: 0,
     latestJobName: fallbackSnapshot.latestJobName,
     latestJobStatus: fallbackSnapshot.latestJobStatus,
     latestReadinessScore: fallbackSnapshot.latestReadinessScore,
     latestReadinessStatus: fallbackSnapshot.latestReadinessStatus,
     latestPlanStatus: fallbackSnapshot.latestPlanStatus,
     latestWorkflowStatus: fallbackSnapshot.latestWorkflowStatus,
-    reportCount,
-    aiRecommendationCount,
+    reportCount: 0,
+    aiRecommendationCount: 0,
     errors
   };
 }
@@ -145,14 +130,5 @@ async function loadRuntimeStatus(errors: string[]): Promise<V2RuntimeStatus> {
       apiStatus: "Unavailable",
       queueStatus: migrationEvidence.queue
     };
-  }
-}
-
-async function settle<T>(label: string, action: () => Promise<T>, errors: string[]): Promise<T | null> {
-  try {
-    return await action();
-  } catch {
-    errors.push(`${label} unavailable; using adapter fallback.`);
-    return null;
   }
 }
