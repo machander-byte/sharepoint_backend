@@ -1,6 +1,6 @@
 # ZMS Test Report
 
-Generated: 2026-06-13
+Generated: 2026-06-14
 
 ## Summary
 
@@ -11,8 +11,8 @@ Current strongest evidence:
 - Backend build passed with 0 warnings and 0 errors.
 - Backend tests passed: 46/46.
 - Frontend production build passed.
-- Vercel production now deploys from the current `ZettalogixMigrationSuite/ZMS.WebUI` source and shows build fingerprint `af0ae68`.
-- Render now builds the current backend subtree commit `9de89db`, but hosted startup is blocked by Supabase/Postgres authentication.
+- Vercel production now deploys from the current `ZettalogixMigrationSuite/ZMS.WebUI` source and shows build fingerprint `1403fb2`.
+- Render now builds the current backend subtree commit `7d7d753`; hosted diagnostics are reachable, DB connectivity succeeds, and schema startup remains degraded with `TimeoutException`.
 - UI V2 route is available at `/v2/*`.
 - Login screen was merged into the UI V2 dark premium design.
 - Existing production UI routes remain unchanged.
@@ -51,10 +51,10 @@ dotnet test .\Zettalogix.MigrationSuite.sln --no-build
 | Backend build | Passed | 0 warnings, 0 errors |
 | Backend tests | Passed | 46 passed, 0 failed, 0 skipped |
 | Protected `/v2` browser check | Passed | Unauthenticated `/v2` and `/v2/monitor` redirect to `/login` |
-| Deployed Vercel `/login` check | Passed | Clean session shows V2 login and build fingerprint `af0ae68` |
+| Deployed Vercel `/login` check | Passed | Clean session shows V2 login and build fingerprint `1403fb2`; old counters removed |
 | Deployed Vercel `/v2` check | Passed with limitation | Unauthenticated routes redirect to `/login`; session-bearing browser renders the V2 shell |
-| Render backend deploy source | Passed | Latest clean-cache deploy shows backend subtree commit `9de89db` |
-| Render backend runtime | Failed | Supabase/Postgres returns `28P01` authentication failure; API endpoints time out |
+| Render backend deploy source | Passed | Latest deploy shows backend subtree commit `7d7d753` |
+| Render backend runtime | Degraded | `/api/version` and `/api/health` respond; `/api/status` returns degraded 503 because database schema startup times out while DB connectivity is healthy |
 | Authenticated V2 browser walkthrough | Partial | Session-bearing browser renders the V2 shell; API-backed behavior remains blocked by Render |
 | Full feature matrix | Created | `docs/pre-production/ZMS_FULL_FEATURE_TEST_MATRIX.md` added |
 
@@ -111,7 +111,7 @@ The current backend test suite covers:
 - No committed frontend component/route test suite.
 - No committed browser E2E suite for authenticated `/v2`.
 - UI V2 read-only adapter is wired, but authenticated API behavior still needs real-session browser verification.
-- Hosted API smoke is blocked until Render accepts a rotated or replaced Postgres connection string.
+- Hosted API-backed feature testing is blocked until Render database schema initialization completes cleanly.
 - No repeatable real-tenant integration test suite for Google Drive, Microsoft Graph upload, SharePoint metadata, or permission writeback.
 - Controlled interruption/recovery and Sentry capture are not yet proven.
 - Stage 2 1,000-file migration is still pending.
@@ -121,14 +121,14 @@ The current backend test suite covers:
 
 The stale-source deployment problem is fixed for both hosted targets:
 
-- Vercel production is aliased to a CLI/manual deployment from `ZettalogixMigrationSuite/ZMS.WebUI` at frontend commit `af0ae68`.
-- Render builds from `machander-byte/sharepoint_backend` branch `main` at backend subtree commit `9de89db`.
+- Vercel production is aliased to a CLI/manual deployment from `ZettalogixMigrationSuite/ZMS.WebUI` at frontend commit `1403fb2`.
+- Render builds from `machander-byte/sharepoint_backend` branch `main` at backend subtree commit `7d7d753`.
 
-The hosted application is not ready for a company demo because the Render API still fails at startup with Supabase/Postgres authentication rejection. The exact next action is to rotate the Supabase database password or replace `ConnectionStrings__ZmsDatabase` with a valid Azure Database for PostgreSQL connection string, redeploy Render, and verify `/api/version`.
+The hosted application is not ready for a company demo because Render remains degraded and authenticated API-backed feature testing is incomplete. The exact next action is to fix the schema initialization timeout and verify `/api/status` returns `Healthy`.
 
 ## Submission Position
 
-The local validated workflow and UI V2 preview can be demonstrated from controlled environments. The hosted production deployment is not ready for company demo until the Render backend starts successfully and pasted credentials are rotated.
+The local validated workflow and UI V2 preview can be demonstrated from controlled environments. The hosted production deployment is not ready for company demo until Render reports healthy status, authenticated UI V2 QA passes, and exposed credentials are rotated before submission.
 
 Do not claim production readiness until:
 

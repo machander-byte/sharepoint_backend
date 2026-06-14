@@ -1,10 +1,10 @@
 # ZMS Deployment Validation Report
 
-Status date: 2026-06-13
+Status date: 2026-06-14
 
 ## Summary
 
-Local build validation passed and the current project source was pushed to GitHub. Render is now building from the current backend split and the old-source issue is fixed, but the hosted API is still failing at startup because Supabase/Postgres authentication is rejected. Vercel production has been redeployed from the correct frontend folder and the old-source issue is fixed there as well.
+Local build validation passed and the current project source was pushed to GitHub. Render is now building from the current backend split and the old-source issue is fixed. The hosted API is reachable, but backend status is degraded because schema initialization times out while database connectivity itself succeeds. Vercel production has been redeployed from the correct frontend folder and the old static login counters were removed.
 
 ## Required Final Response Fields
 
@@ -13,33 +13,33 @@ Local build validation passed and the current project source was pushed to GitHu
 | Local backend build | Passed, 0 warnings, 0 errors |
 | Local backend tests | Passed, 46/46 |
 | Local frontend build | Passed |
-| Render deployment status | Failed |
+| Render deployment status | Deployed, degraded |
 | Render backend URL | `https://sharepoint-backend-g5vc.onrender.com` |
 | Current full-project Git branch | `master` pushed |
-| Application source commit | `af0ae68` |
-| Current Render backend split push | `main` at `9de89db` |
-| Latest Render deploy checked | `dep-d8mmkspo3t8c73c0fm3g` |
-| Render build log latest commit | Yes, `9de89db` |
+| Application source commit | `7f73891` |
+| Current Render backend split push | `main` at `7d7d753` |
+| Latest Render deploy checked | `dep-d8n5o167r5hc73ae6meg` |
+| Render build log latest commit | Yes, `7d7d753` |
 | Render old source issue | Fixed |
-| Render DB issue | Not fixed; `28P01` authentication failure remains |
-| Backend `/api/health` | Timed out / unreachable |
-| Backend `/api/status` | Timed out / unreachable |
-| Backend `/api/version` | Timed out / unreachable; commit cannot be returned until API starts |
+| Render DB issue | Credential fixed; database connects; schema startup times out |
+| Backend `/api/health` | 200 OK, degraded |
+| Backend `/api/status` | 503 Degraded; database `healthy=true` |
+| Backend `/api/version` | 200 OK, commit `7d7d753` |
 | Vercel deployment status | Production redeployed by Vercel CLI/manual source deploy |
 | Vercel frontend URL | `https://zms-migration-suite.vercel.app` |
 | Vercel build/source folder | `ZettalogixMigrationSuite/ZMS.WebUI` |
 | Vercel build log correct source | Yes, Vite build ran from the frontend project |
 | Vercel old source issue | Fixed |
-| Login test | Passed; clean session shows V2 login and fingerprint `af0ae68` |
+| Login test | Passed; clean session shows V2 login and fingerprint `1403fb2`; old counters removed |
 | Unauthenticated `/v2` | Redirects to `/login` |
 | Unauthenticated `/v2/monitor` | Redirects to `/login` |
 | Authenticated `/v2` test | Loads current UI V2 shell when a Supabase session is present |
-| CORS result | Not verifiable while backend is down |
+| CORS result | Partially verifiable only for anonymous diagnostics; authenticated API CORS still pending |
 | Supabase Auth result | Login page loads; OAuth flow not completed in this pass |
 | Google config result | Drive API and Picker API enabled |
 | Microsoft/SharePoint result | Not verified; Microsoft sign-in required |
 | Security check result | No secrets added to source; pasted DB password must be rotated before submission; dependency audit has 6 findings |
-| UI smoke result | Frontend latest source verified; API-backed pages blocked by Render |
+| UI smoke result | Frontend latest source verified; API-backed pages still blocked by degraded backend/auth session |
 
 ## Known Limitations
 
@@ -55,9 +55,10 @@ Local build validation passed and the current project source was pushed to GitHu
 
 ## Remaining Blockers
 
-- Rotate or replace Render `ConnectionStrings__ZmsDatabase`; current shape is correct for Supabase pooler host, port `6543`, and scoped user, but authentication is rejected.
+- Move schema initialization out of Render startup or complete it through a controlled migration so startup status reaches `Succeeded`.
+- Keep the Supabase DB password rotated before company submission because an earlier password was pasted in chat/tool output.
 - Alternative database path: set Render `ConnectionStrings__ZmsDatabase` to a valid Azure Database for PostgreSQL connection string if Supabase Postgres should be replaced. Supabase Auth can remain configured separately for login.
-- Redeploy Render backend and verify `/api/health`, `/api/status`, and `/api/version`.
+- Reverify `/api/health`, `/api/status`, and `/api/version` after schema initialization is fixed.
 - Grant Vercel Git access to `machander-byte/sharepoint_backend` if future deploys should be Git-triggered. Current production frontend deploy was performed manually through Vercel CLI.
 - Recheck CORS after backend and frontend are both live.
 - Verify Microsoft Entra Graph permissions and SharePoint target access.
@@ -71,4 +72,4 @@ Not ready.
 
 ## Exact Next Action
 
-Rotate the Supabase database password or replace the Render database connection with a valid Azure Database for PostgreSQL connection string, redeploy Render, and verify `/api/version` returns `ZMS` with commit `9de89db`.
+Fix the database schema initialization timeout, redeploy Render, and verify `/api/status` returns `Healthy` with commit `7d7d753` or newer.

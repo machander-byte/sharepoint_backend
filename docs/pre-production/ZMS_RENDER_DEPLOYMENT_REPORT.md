@@ -1,14 +1,14 @@
 # ZMS Render Deployment Report
 
-Status date: 2026-06-13
+Status date: 2026-06-14
 
 ## Scope
 
 Backend deployment target for `sharepoint_backend/Zettalogix.MigrationSuite.sln` and `sharepoint_backend/Dockerfile.api`.
 
-The full current project was pushed to GitHub `master` at `af0ae68`. Because Render is connected to `main` and expects the backend at repository root, the current `sharepoint_backend` subtree was also pushed to GitHub `main` at `9de89db`.
+The full current project was pushed to GitHub `master` at `7f73891`. Because Render is connected to `main` and expects the backend at repository root, the current `sharepoint_backend` subtree was also pushed to GitHub `main` at `7d7d753`.
 
-Deployment fingerprint support is present in the backend at `/api/version` and `/api/status`, but the hosted API cannot expose it yet because the service fails during database startup.
+Deployment fingerprint support is present in the backend at `/api/version` and `/api/status`. The hosted API now exposes the fingerprint even when database startup is degraded.
 
 ## Local Verification
 
@@ -31,9 +31,9 @@ Deployment fingerprint support is present in the backend at `/api/version` and `
 | Repository | `machander-byte/sharepoint_backend` |
 | Connected branch | `main` |
 | Deployed source branch | `main` backend subtree from current project |
-| Current backend source commit | `9de89db` |
+| Current backend source commit | `7d7d753` |
 | Render backend URL | `https://sharepoint-backend-g5vc.onrender.com` |
-| Dashboard status | Failed |
+| Dashboard status | Deployed, degraded |
 
 ## Source Verification
 
@@ -43,8 +43,8 @@ Deployment fingerprint support is present in the backend at `/api/version` and `
 | Render connected branch | `main` |
 | Backend root in deployed branch | Repository root from `sharepoint_backend` subtree split |
 | Docker build path | `Dockerfile.api` at backend subtree root |
-| Latest clean-cache deploy | `dep-d8mmkspo3t8c73c0fm3g` |
-| Latest deploy commit shown in Render | `9de89db` (`Add deployment fingerprints`) |
+| Latest deploy checked | `dep-d8n5o167r5hc73ae6meg` |
+| Latest deploy commit shown in Render | `7d7d753` (`Bound database startup diagnostics`) |
 | Render build log source proof | Shows `WORKDIR /src`, `COPY . .`, `dotnet restore Zettalogix.MigrationSuite.sln`, and `dotnet publish ZMS.API/ZMS.API.csproj` |
 | Old source references | None observed in the latest deploy log |
 
@@ -52,17 +52,17 @@ Deployment fingerprint support is present in the backend at `/api/version` and `
 
 | Endpoint | Result |
 | --- | --- |
-| `/api/health` | Timed out because service is failing to start |
-| `/api/status` | Not reachable because service is failing to start |
-| `/api/version` | Not reachable because service is failing to start |
+| `/api/health` | 200 OK, `status=Degraded` |
+| `/api/status` | 503 Degraded; database connection reports `healthy=true` |
+| `/api/version` | 200 OK, `appName=ZMS`, `commit=7d7d753` |
 
 ## Failure Evidence
 
-Recent Render logs from deploy `dep-d8mmkspo3t8c73c0fm3g` show the current API exits with status 134 during startup after PostgreSQL authentication fails. No password value is included in this report.
+Earlier Render logs showed PostgreSQL authentication failures. The Supabase database password was reset and Render was updated without printing the new value. The current deployed API connects to Postgres successfully.
 
-The stale port issue was corrected in Render: the stored `ConnectionStrings__ZmsDatabase` value now uses the Supabase pooler host, port `6543`, and the scoped Supabase database user. The latest failed log also shows the app is now trying the pooler on `6543`, which proves the Render env update took effect.
+The stored `ConnectionStrings__ZmsDatabase` value uses the Supabase pooler host, port `6543`, and the scoped Supabase database user.
 
-Remaining blocker: Supabase still returns `28P01 password authentication failed`. This requires rotating or replacing the database password/connection string in Render, then redeploying. The currently pasted password must be treated as exposed and cannot be accepted for final company submission.
+Remaining blocker: database startup schema initialization exceeds the bounded startup timeout and reports `TimeoutException`. The API stays online in degraded mode, `/api/version` and `/api/health` respond, and `/api/status` confirms database connectivity. API-backed features still need validation after schema initialization is completed or moved to a controlled migration step.
 
 Azure option: the backend uses the generic Npgsql/Postgres provider, so Render can use Azure Database for PostgreSQL by replacing `ConnectionStrings__ZmsDatabase` with an Azure PostgreSQL connection string. Azure Blob Storage is not a drop-in replacement for this database connection.
 
@@ -74,7 +74,7 @@ Azure option: the backend uses the generic Npgsql/Postgres provider, so Render c
 | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | SET in `render.yaml` |
 | `Database__Provider` | SET in `render.yaml` |
-| `ConnectionStrings__ZmsDatabase` | ROTATE REQUIRED / UPDATE REQUIRED in Render |
+| `ConnectionStrings__ZmsDatabase` | SET in Render with rotated password; keep rotated again before company submission because an earlier password was pasted |
 | `DataProtection__KeyStorage` | SET in `render.yaml` |
 | `Supabase__Auth__Authority` | SET in `render.yaml` |
 | `Supabase__Auth__Audience` | SET in `render.yaml` |
@@ -85,13 +85,13 @@ Azure option: the backend uses the generic Npgsql/Postgres provider, so Render c
 | `GOOGLE_REFRESH_TOKEN` | ROTATE REQUIRED, Render secret not opened |
 | `Sentry__Dsn` | Optional; not opened |
 | `Sentry__TracesSampleRate` | SET in Render to `0.0` |
-| `ZMS_BUILD_COMMIT` | SET in Render to `9de89db` |
+| `ZMS_BUILD_COMMIT` | SET in Render to `7d7d753` |
 | `ZMS_BUILD_TIME` | SET in Render |
 
 ## Code Hardening Added
 
-Startup now enables PostgreSQL row-level security for the public ZMS tables after schema creation and migrations. This is intended to address Supabase Advisor RLS warnings once the backend can connect to the database.
+Startup now runs database initialization in the background and reports the initialization state through `/api/health`, `/api/status`, and `/api/version`. PostgreSQL row-level security is still enabled during schema initialization, but the current production run times out before the startup state reaches `Succeeded`.
 
 ## Decision
 
-Render old-source issue is fixed. Render backend deployment is not ready until the Supabase/Postgres credential is rotated or replaced and the service starts successfully.
+Render old-source and DB credential issues are fixed. Render backend is reachable but degraded until database startup initialization completes without timeout and authenticated API workflows are verified.

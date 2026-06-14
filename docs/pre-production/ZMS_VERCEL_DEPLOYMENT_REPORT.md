@@ -1,6 +1,6 @@
 # ZMS Vercel Deployment Report
 
-Status date: 2026-06-13
+Status date: 2026-06-14
 
 ## Scope
 
@@ -30,23 +30,23 @@ Frontend deployment target for `ZettalogixMigrationSuite/ZMS.WebUI`.
 | Production frontend URL | `https://zms-migration-suite.vercel.app` |
 | Production URL HTTP check | 200 OK |
 | Current full-project Git branch | `master` pushed |
-| Application source commit | `af0ae68` |
+| Application source commit | `1403fb2` |
 | Frontend source folder | `ZettalogixMigrationSuite/ZMS.WebUI` |
 | Deployment method | Vercel CLI/manual source deploy from the frontend folder |
-| Latest production deployment | `zms-migration-suite-jdr5tzaol-badugujashwanth-4113s-projects.vercel.app` |
+| Latest production deployment | `zms-migration-suite-72alhjgph-badugujashwanth-4113s-projects.vercel.app` |
 | Production alias | `https://zms-migration-suite.vercel.app` |
-| Build fingerprint shown on clean `/login` | `ZMS frontend build af0ae68` |
-| `/login` clean session | Loads V2 login design |
+| Build fingerprint shown on clean `/login` | `ZMS frontend build 1403fb2` |
+| `/login` clean session | Loads V2 login design; old static counters removed |
 | `/v2` unauthenticated | Redirects to `/login` |
 | `/v2/monitor` unauthenticated | Redirects to `/login` |
 | `/v2`, session-bearing browser | Loads current UI V2 shell |
 | `/v2/command-center`, session-bearing browser | Loads current UI V2 shell |
-| Backend API connectivity | Blocked by Render backend failure |
-| CORS result | Not verifiable while backend is failing |
+| Backend API connectivity | Anonymous diagnostics reachable; API is degraded |
+| CORS result | Not fully verifiable until authenticated API calls are tested |
 
 ## Deployment Gap
 
-The deployed frontend bundle references `https://sharepoint-backend-g5vc.onrender.com` as its backend API base. That backend is failing to start, so deployed API calls cannot be verified.
+The deployed frontend bundle references `https://sharepoint-backend-g5vc.onrender.com` as its backend API base. Anonymous backend diagnostics are reachable, but authenticated API-backed feature flows still need validation because backend startup is degraded.
 
 The Vercel dashboard shows `zms-migration-suite`. The project was briefly connected to the wrong GitHub repository, `badugujashwanth-create/Cricket_chatbot_Backend`; that wrong connection has been removed.
 
@@ -73,6 +73,8 @@ Required Vercel Git target when access is granted:
 | Alias update | `https://zms-migration-suite.vercel.app` points to the latest production deployment |
 | Old source issue | Fixed for the aliased production frontend |
 | Supabase browser client issue | Fixed by switching the SPA client to `@supabase/supabase-js` |
+| Login stale/raw counters | Removed; clean login now shows neutral workspace/tutorial/API/safety cues |
+| Tutorial page | Added at `/v2/tutorial` behind the existing auth guard |
 | Browser page errors during latest V2 shell check | 0 page errors observed |
 
 ## Required Frontend Env
@@ -86,9 +88,9 @@ Required Vercel Git target when access is granted:
 | `VITE_GOOGLE_API_KEY` | SET in Vercel Production, value not printed |
 | `VITE_GOOGLE_APP_ID` | SET in Vercel Production, value not printed |
 | `VITE_GOOGLE_DRIVE_SCOPE` | SET to Drive readonly scope |
-| `VITE_APP_COMMIT` | SET to `af0ae68` |
+| `VITE_APP_COMMIT` | SET to `1403fb2` |
 | `VITE_APP_BUILD_TIME` | SET in Vercel Production |
 
 ## Decision
 
-Vercel old-source issue is fixed. The frontend is deployment-validated for the unauthenticated login route, protected-route redirects, and UI V2 shell rendering. Full API-backed validation remains blocked until the Render backend is healthy.
+Vercel old-source issue is fixed. The frontend is deployment-validated for the unauthenticated login route and protected-route redirects. Full authenticated UI V2 and API-backed validation remains blocked until a real Supabase browser session is available and the Render backend is no longer degraded.

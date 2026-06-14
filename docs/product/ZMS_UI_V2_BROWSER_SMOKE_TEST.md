@@ -1,6 +1,6 @@
 # ZMS UI V2 Browser Smoke Test
 
-Status date: 2026-06-13
+Status date: 2026-06-14
 
 ## Scope
 
@@ -46,10 +46,11 @@ Authenticated `/v2` page-by-page browser testing is blocked in this environment 
 ## UI Bugs Fixed
 
 - Login screen now matches the UI V2 dark premium visual language.
-- Login screen now shows current evidence: 231/231 files, 0 failures, 0 retries, backend tests 46/46.
-- Login screen now displays: `File migration integrity passed. Empty-folder preservation is a known gap.`
+- Login screen no longer shows old static migration counters as current live data.
+- Login screen now shows neutral workspace, tutorial, API diagnostics, and pilot-first safety cues.
 - `/v2/*` subpaths are supported; direct links such as `/v2/monitor` route through the V2 shell when authenticated.
-- V2 read-only adapter now calls safe APIs through existing frontend services and keeps fallback data if APIs fail.
+- V2 read-only adapter now calls safe APIs through existing frontend services only when runtime is healthy; degraded/offline states show empty live-data values rather than mock records.
+- `/v2/tutorial` was added behind the existing auth guard.
 
 ## APIs Wired Into V2 Adapter
 
@@ -95,13 +96,14 @@ dotnet test .\Zettalogix.MigrationSuite.sln --no-build
 | Page / Flow | Result |
 | --- | --- |
 | `https://zms-migration-suite.vercel.app/login` | Loads |
-| Clean-session `/login` | Loads V2 login design and visible build fingerprint `ZMS frontend build af0ae68` |
+| Clean-session `/login` | Loads V2 login design and visible build fingerprint `ZMS frontend build 1403fb2`; old counters absent |
 | Unauthenticated `/v2` | Redirects to `/login` |
+| Unauthenticated `/v2/tutorial` | Redirects to `/login` |
 | Unauthenticated `/v2/monitor` | Redirects to `/login` |
 | Session-bearing `/v2` | Loads current UI V2 shell |
 | Session-bearing `/v2/monitor` | Loads current UI V2 shell |
 | Session-bearing `/v2/command-center` | Loads current UI V2 shell |
-| Backend API data | Blocked because Render backend is failing |
+| Backend API data | Anonymous diagnostics reachable; API-backed authenticated data still blocked by degraded backend/auth session |
 | Browser page errors | 0 page errors observed during latest V2 shell check |
 
-Deployment note: the local build contains the current UI V2 route integration and was pushed to GitHub `master`; the application source commit is `af0ae68`. The production Vercel alias now points to a Vercel CLI/manual deployment from `ZettalogixMigrationSuite/ZMS.WebUI`. API-backed V2 validation remains blocked by the Render backend database authentication failure.
+Deployment note: the local build contains the current UI V2 route integration and was pushed to GitHub `master`; the frontend deployment fingerprint is `1403fb2`. The production Vercel alias now points to a Vercel CLI/manual deployment from `ZettalogixMigrationSuite/ZMS.WebUI`. API-backed V2 validation remains blocked by Render degraded status and lack of a real authenticated Supabase browser session.
