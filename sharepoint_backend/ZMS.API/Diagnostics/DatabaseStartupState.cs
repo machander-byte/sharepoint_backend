@@ -41,6 +41,16 @@ public sealed class DatabaseStartupState
             LastCheckedUtc: DateTimeOffset.UtcNow));
     }
 
+    public void MarkSkipped(string provider)
+    {
+        Update(new DatabaseStartupSnapshot(
+            Status: "Skipped",
+            Provider: provider,
+            Message: "Database schema initialization is disabled for normal startup.",
+            ErrorType: null,
+            LastCheckedUtc: DateTimeOffset.UtcNow));
+    }
+
     public void MarkFailed(string provider, Exception exception)
     {
         Update(new DatabaseStartupSnapshot(

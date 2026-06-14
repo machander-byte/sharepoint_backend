@@ -65,15 +65,27 @@ export default function V2App(): JSX.Element {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState<V2PageId>(() => pageFromPath(location.pathname));
   const [snapshot, setSnapshot] = useState<V2ReadOnlySnapshot>(fallbackSnapshot);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const runtime = snapshot.runtime;
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadSnapshot(): Promise<void> {
-      const nextSnapshot = await loadV2ReadOnlySnapshot();
-      if (!cancelled) {
-        setSnapshot(nextSnapshot);
+      try {
+        const nextSnapshot = await loadV2ReadOnlySnapshot();
+        if (!cancelled) {
+          setSnapshot(nextSnapshot);
+          setLoadError(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setSnapshot({
+            ...fallbackSnapshot,
+            errors: ["Runtime status could not load. No fallback records are shown as real data."]
+          });
+          setLoadError("Runtime status could not load. You can still navigate the review UI, but live API data is unavailable.");
+        }
       }
     }
 
@@ -100,6 +112,12 @@ export default function V2App(): JSX.Element {
         <div className="zms-v2-main">
           <V2TopBar activePage={activePage} runtime={runtime} />
           <main className="zms-v2-content">
+            {loadError ? (
+              <div className="zms-v2-alert" role="status">
+                <strong>Backend status unavailable.</strong>
+                <span>{loadError}</span>
+              </div>
+            ) : null}
             {renderPage(activePage, runtime, snapshot)}
           </main>
         </div>

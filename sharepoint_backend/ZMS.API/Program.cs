@@ -1,14 +1,17 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using ZMS.API.Diagnostics;
 using ZMS.API.Middleware;
 using ZMS.API.Security;
@@ -43,6 +46,7 @@ builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 
 
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton<DatabaseStartupState>();
+builder.Services.AddScoped<DatabaseSchemaReadinessChecker>();
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = maxRequestBodySize;
@@ -104,6 +108,24 @@ builder.Services.AddCors(options =>
 
 builder.Services.Configure<MigrationEngineOptions>(builder.Configuration.GetSection(MigrationEngineOptions.SectionName));
 builder.Services.Configure<GoogleDriveOptions>(builder.Configuration.GetSection(GoogleDriveOptions.SectionName));
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("ZmsApi", httpContext =>
+    {
+        var partitionKey = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = builder.Configuration.GetValue<int?>("RateLimits:ApiPermitLimit") ?? 240,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0
+        });
+    });
+});
 
 var dataProtectionBuilder = builder.Services
     .AddDataProtection()
@@ -134,12 +156,37 @@ builder.Services
 var app = builder.Build();
 
 app.UseForwardedHeaders();
-app.UseExceptionHandler();
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+        var logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("ZMS.API.ExceptionHandler");
+
+        if (exception is not null)
+        {
+            logger.LogError(exception, "Unhandled exception for {Method} {Path}", context.Request.Method, context.Request.Path.Value);
+        }
+
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        await context.Response.WriteAsJsonAsync(new
+        {
+            Error = "Something went wrong",
+            Code = "ZMS_INTERNAL_ERROR",
+            RequestId = context.TraceIdentifier,
+            Timestamp = DateTimeOffset.UtcNow
+        });
+    });
+});
 app.UseHttpsRedirection();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseCors("ZmsCors");
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseMiddleware<AuditLoggingMiddleware>();
 app.UseAuthorization();
 app.MapGet("/", () => Results.Ok(new
@@ -147,12 +194,40 @@ app.MapGet("/", () => Results.Ok(new
     Status = "Healthy",
     HealthEndpoint = "/api/health"
 })).AllowAnonymous();
-app.MapControllers();
+app.MapControllers().RequireRateLimiting("ZmsApi");
 
-_ = Task.Run(() => EnsureDatabaseCreatedAsync(app.Services, app.Logger, app.Configuration));
-app.Logger.LogInformation("Database startup initialization has been scheduled in the background.");
+if (ShouldRunDatabaseSchemaInit(app.Configuration))
+{
+    _ = Task.Run(() => EnsureDatabaseCreatedAsync(app.Services, app.Logger, app.Configuration));
+    app.Logger.LogWarning("Database schema initialization is enabled by ZMS_RUN_DB_SCHEMA_INIT. This should only be used for controlled schema maintenance.");
+}
+else
+{
+    _ = Task.Run(() => MarkDatabaseSchemaInitializationSkippedAsync(app.Services, app.Logger));
+    app.Logger.LogInformation("Database schema initialization is disabled for normal startup. Health endpoints will perform bounded schema readiness checks.");
+}
 
 app.Run();
+
+static bool ShouldRunDatabaseSchemaInit(IConfiguration configuration)
+{
+    return configuration.GetValue<bool?>("ZMS_RUN_DB_SCHEMA_INIT")
+        ?? configuration.GetValue<bool?>("Database:RunSchemaInit")
+        ?? false;
+}
+
+static Task MarkDatabaseSchemaInitializationSkippedAsync(IServiceProvider services, ILogger logger)
+{
+    using var scope = services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ZmsDbContext>();
+    var startupState = scope.ServiceProvider.GetRequiredService<DatabaseStartupState>();
+    var provider = dbContext.Database.ProviderName ?? "unknown";
+
+    startupState.MarkSkipped(provider);
+    logger.LogInformation("Database schema initialization skipped for provider {Provider}.", provider);
+
+    return Task.CompletedTask;
+}
 
 static async Task EnsureDatabaseCreatedAsync(IServiceProvider services, ILogger logger, IConfiguration configuration)
 {
@@ -223,18 +298,18 @@ static async Task RunDatabaseInitializationCoreAsync(ZmsDbContext dbContext, ILo
 {
     if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
     {
-        await EnsurePostgresSchemaAsync(dbContext);
-        await EnsureEnterpriseTablesAsync(dbContext);
-        await EnsureAuditLogsTableAsync(dbContext);
+        await EnsurePostgresSchemaAsync(dbContext, logger);
+        await EnsureEnterpriseTablesAsync(dbContext, logger);
+        await EnsureAuditLogsTableAsync(dbContext, logger);
         await ApplyMigrationsIfSafeAsync(dbContext, logger);
-        await EnablePostgresRowLevelSecurityAsync(dbContext);
+        await EnablePostgresRowLevelSecurityAsync(dbContext, logger);
         return;
     }
 
     await dbContext.Database.EnsureCreatedAsync();
     await EnsureMigrationJobColumnsAsync(dbContext);
-    await EnsureEnterpriseTablesAsync(dbContext);
-    await EnsureAuditLogsTableAsync(dbContext);
+    await EnsureEnterpriseTablesAsync(dbContext, logger);
+    await EnsureAuditLogsTableAsync(dbContext, logger);
     await ApplyMigrationsIfSafeAsync(dbContext, logger);
 }
 
@@ -263,9 +338,9 @@ static async Task ApplyMigrationsIfSafeAsync(ZmsDbContext dbContext, ILogger log
     }
 }
 
-static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
+static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext, ILogger logger)
 {
-    await dbContext.Database.ExecuteSqlRawAsync("""
+    await ExecuteSchemaStepAsync(dbContext, logger, "Connections table", """
         CREATE TABLE IF NOT EXISTS "Connections"
         (
             "Id" uuid NOT NULL PRIMARY KEY,
@@ -286,7 +361,7 @@ static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
         );
         """);
 
-    await dbContext.Database.ExecuteSqlRawAsync("""
+    await ExecuteSchemaStepAsync(dbContext, logger, "MigrationJobs table", """
         CREATE TABLE IF NOT EXISTS "MigrationJobs"
         (
             "Id" uuid NOT NULL PRIMARY KEY,
@@ -317,7 +392,7 @@ static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
         );
         """);
 
-    await dbContext.Database.ExecuteSqlRawAsync("""
+    await ExecuteSchemaStepAsync(dbContext, logger, "MigrationItems table", """
         CREATE TABLE IF NOT EXISTS "MigrationItems"
         (
             "Id" uuid NOT NULL PRIMARY KEY,
@@ -337,7 +412,7 @@ static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
         );
         """);
 
-    await dbContext.Database.ExecuteSqlRawAsync("""
+    await ExecuteSchemaStepAsync(dbContext, logger, "Logs table", """
         CREATE TABLE IF NOT EXISTS "Logs"
         (
             "Id" uuid NOT NULL PRIMARY KEY,
@@ -352,7 +427,7 @@ static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
         );
         """);
 
-    await dbContext.Database.ExecuteSqlRawAsync("""
+    await ExecuteSchemaStepAsync(dbContext, logger, "DataProtectionKeys table", """
         CREATE TABLE IF NOT EXISTS "DataProtectionKeys"
         (
             "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
@@ -361,29 +436,29 @@ static async Task EnsurePostgresSchemaAsync(ZmsDbContext dbContext)
         );
         """);
 
-    await dbContext.Database.ExecuteSqlRawAsync(
+    await ExecuteSchemaStepAsync(dbContext, logger, "Connections.UserId column",
         "ALTER TABLE \"Connections\" ADD COLUMN IF NOT EXISTS \"UserId\" character varying(200) NOT NULL DEFAULT '';");
-    await dbContext.Database.ExecuteSqlRawAsync(
+    await ExecuteSchemaStepAsync(dbContext, logger, "MigrationJobs.UserId column",
         "ALTER TABLE \"MigrationJobs\" ADD COLUMN IF NOT EXISTS \"UserId\" character varying(200) NOT NULL DEFAULT '';");
-    await dbContext.Database.ExecuteSqlRawAsync(
+    await ExecuteSchemaStepAsync(dbContext, logger, "MigrationJobs.TargetLibraryUrlSegment column",
         "ALTER TABLE \"MigrationJobs\" ADD COLUMN IF NOT EXISTS \"TargetLibraryUrlSegment\" character varying(200) NULL;");
-    await dbContext.Database.ExecuteSqlRawAsync(
+    await ExecuteSchemaStepAsync(dbContext, logger, "MigrationJobs.TargetRootPath column",
         "ALTER TABLE \"MigrationJobs\" ADD COLUMN IF NOT EXISTS \"TargetRootPath\" character varying(500) NULL;");
 
-    await dbContext.Database.ExecuteSqlRawAsync(
+    await ExecuteSchemaStepAsync(dbContext, logger, "Connections user/enabled index",
         "CREATE INDEX IF NOT EXISTS \"IX_Connections_UserId_IsEnabled\" ON \"Connections\"(\"UserId\", \"IsEnabled\");");
-    await dbContext.Database.ExecuteSqlRawAsync(
+    await ExecuteSchemaStepAsync(dbContext, logger, "MigrationJobs status index",
         "CREATE INDEX IF NOT EXISTS \"IX_MigrationJobs_Status\" ON \"MigrationJobs\"(\"Status\");");
-    await dbContext.Database.ExecuteSqlRawAsync(
+    await ExecuteSchemaStepAsync(dbContext, logger, "MigrationJobs created index",
         "CREATE INDEX IF NOT EXISTS \"IX_MigrationJobs_CreatedUtc\" ON \"MigrationJobs\"(\"CreatedUtc\" DESC);");
-    await dbContext.Database.ExecuteSqlRawAsync(
+    await ExecuteSchemaStepAsync(dbContext, logger, "MigrationItems job/status index",
         "CREATE INDEX IF NOT EXISTS \"IX_MigrationItems_JobId_Status\" ON \"MigrationItems\"(\"JobId\", \"Status\");");
-    await dbContext.Database.ExecuteSqlRawAsync(
+    await ExecuteSchemaStepAsync(dbContext, logger, "Logs job/created index",
         "CREATE INDEX IF NOT EXISTS \"IX_Logs_JobId_CreatedUtc\" ON \"Logs\"(\"JobId\", \"CreatedUtc\" DESC);");
 
 }
 
-static async Task EnablePostgresRowLevelSecurityAsync(ZmsDbContext dbContext)
+static async Task EnablePostgresRowLevelSecurityAsync(ZmsDbContext dbContext, ILogger logger)
 {
     var enableRlsStatements = new[]
     {
@@ -413,7 +488,7 @@ static async Task EnablePostgresRowLevelSecurityAsync(ZmsDbContext dbContext)
 
     foreach (var statement in enableRlsStatements)
     {
-        await dbContext.Database.ExecuteSqlRawAsync(statement);
+        await ExecuteSchemaStepAsync(dbContext, logger, $"RLS {GetQuotedTableName(statement)}", statement);
     }
 }
 
@@ -546,11 +621,11 @@ static async Task EnsureMigrationJobColumnsAsync(ZmsDbContext dbContext)
     }
 }
 
-static async Task EnsureEnterpriseTablesAsync(ZmsDbContext dbContext)
+static async Task EnsureEnterpriseTablesAsync(ZmsDbContext dbContext, ILogger logger)
 {
     if (dbContext.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
     {
-        await dbContext.Database.ExecuteSqlRawAsync("""
+        await ExecuteSchemaStepAsync(dbContext, logger, "SQLite enterprise tables", """
             CREATE TABLE IF NOT EXISTS "DiscoveryRuns" ("Id" TEXT NOT NULL PRIMARY KEY, "Name" TEXT NOT NULL, "ProjectId" TEXT NULL, "ConnectionId" TEXT NULL, "SourceType" TEXT NOT NULL, "Status" TEXT NOT NULL, "StartedAt" TEXT NOT NULL, "CompletedAt" TEXT NULL, "TotalSites" INTEGER NOT NULL, "TotalWebs" INTEGER NOT NULL, "TotalLibraries" INTEGER NOT NULL, "TotalLists" INTEGER NOT NULL, "TotalFolders" INTEGER NOT NULL, "TotalFiles" INTEGER NOT NULL, "TotalPermissions" INTEGER NOT NULL, "TotalSharingLinks" INTEGER NOT NULL, "TotalRiskFindings" INTEGER NOT NULL, "ReadinessScore" INTEGER NOT NULL, "ErrorMessage" TEXT NULL, "CreatedUtc" TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS "DiscoveredSites" ("Id" TEXT NOT NULL PRIMARY KEY, "DiscoveryRunId" TEXT NOT NULL, "ExternalId" TEXT NOT NULL, "Title" TEXT NOT NULL, "Url" TEXT NOT NULL, "Department" TEXT NOT NULL, "Description" TEXT NOT NULL, "FileCount" INTEGER NOT NULL, "FolderCount" INTEGER NOT NULL, "SizeBytes" INTEGER NOT NULL, "CreatedAt" TEXT NULL, "ModifiedAt" TEXT NULL);
             CREATE TABLE IF NOT EXISTS "DiscoveredWebs" ("Id" TEXT NOT NULL PRIMARY KEY, "DiscoveryRunId" TEXT NOT NULL, "SiteId" TEXT NULL, "ExternalId" TEXT NOT NULL, "Title" TEXT NOT NULL, "Url" TEXT NOT NULL, "Description" TEXT NOT NULL);
@@ -573,32 +648,38 @@ static async Task EnsureEnterpriseTablesAsync(ZmsDbContext dbContext)
 
     if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
     {
-        await dbContext.Database.ExecuteSqlRawAsync("""
-            CREATE TABLE IF NOT EXISTS "DiscoveryRuns" ("Id" uuid NOT NULL PRIMARY KEY, "Name" character varying(200) NOT NULL, "ProjectId" character varying(100) NULL, "ConnectionId" uuid NULL, "SourceType" character varying(80) NOT NULL, "Status" character varying(50) NOT NULL, "StartedAt" timestamp with time zone NOT NULL, "CompletedAt" timestamp with time zone NULL, "TotalSites" integer NOT NULL DEFAULT 0, "TotalWebs" integer NOT NULL DEFAULT 0, "TotalLibraries" integer NOT NULL DEFAULT 0, "TotalLists" integer NOT NULL DEFAULT 0, "TotalFolders" integer NOT NULL DEFAULT 0, "TotalFiles" integer NOT NULL DEFAULT 0, "TotalPermissions" integer NOT NULL DEFAULT 0, "TotalSharingLinks" integer NOT NULL DEFAULT 0, "TotalRiskFindings" integer NOT NULL DEFAULT 0, "ReadinessScore" integer NOT NULL DEFAULT 0, "ErrorMessage" character varying(2000) NULL, "CreatedUtc" timestamp with time zone NOT NULL DEFAULT now());
-            CREATE TABLE IF NOT EXISTS "DiscoveredSites" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "ExternalId" character varying(200) NOT NULL, "Title" character varying(300) NOT NULL, "Url" character varying(1000) NOT NULL, "Department" character varying(100) NOT NULL, "Description" character varying(1000) NOT NULL, "FileCount" integer NOT NULL DEFAULT 0, "FolderCount" integer NOT NULL DEFAULT 0, "SizeBytes" bigint NOT NULL DEFAULT 0, "CreatedAt" timestamp with time zone NULL, "ModifiedAt" timestamp with time zone NULL);
-            CREATE TABLE IF NOT EXISTS "DiscoveredWebs" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "SiteId" uuid NULL, "ExternalId" character varying(200) NOT NULL, "Title" character varying(300) NOT NULL, "Url" character varying(1000) NOT NULL, "Description" character varying(1000) NOT NULL);
-            CREATE TABLE IF NOT EXISTS "DiscoveredLibraries" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "SiteId" uuid NULL, "WebId" uuid NULL, "ExternalId" character varying(200) NOT NULL, "Title" character varying(300) NOT NULL, "Type" character varying(100) NOT NULL, "Url" character varying(1000) NOT NULL, "FileCount" integer NOT NULL DEFAULT 0, "FolderCount" integer NOT NULL DEFAULT 0, "SizeBytes" bigint NOT NULL DEFAULT 0, "BrokenInheritance" boolean NOT NULL DEFAULT false);
-            CREATE TABLE IF NOT EXISTS "DiscoveredLists" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "SiteId" uuid NULL, "WebId" uuid NULL, "ExternalId" character varying(200) NOT NULL, "Title" character varying(300) NOT NULL, "Description" character varying(1000) NOT NULL, "ItemCount" integer NOT NULL DEFAULT 0);
-            CREATE TABLE IF NOT EXISTS "DiscoveredFolders" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "LibraryId" uuid NULL, "ExternalId" character varying(200) NOT NULL, "Name" character varying(300) NOT NULL, "Path" character varying(1500) NOT NULL, "Depth" integer NOT NULL DEFAULT 0, "FileCount" integer NOT NULL DEFAULT 0, "SizeBytes" bigint NOT NULL DEFAULT 0, "Archived" boolean NOT NULL DEFAULT false, "LongPathRisk" boolean NOT NULL DEFAULT false, "DuplicateIndicator" boolean NOT NULL DEFAULT false);
-            CREATE TABLE IF NOT EXISTS "DiscoveredFiles" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "LibraryId" uuid NULL, "FolderId" uuid NULL, "Name" character varying(300) NOT NULL, "Path" character varying(1500) NOT NULL, "Url" character varying(1500) NOT NULL, "SizeBytes" bigint NOT NULL DEFAULT 0, "CreatedAt" timestamp with time zone NULL, "ModifiedAt" timestamp with time zone NULL, "LargeFileRisk" boolean NOT NULL DEFAULT false, "LongPathRisk" boolean NOT NULL DEFAULT false, "DuplicateIndicator" boolean NOT NULL DEFAULT false);
-            CREATE TABLE IF NOT EXISTS "DiscoveredPermissions" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "Site" character varying(300) NOT NULL, "Scope" character varying(1000) NOT NULL, "Principal" character varying(300) NOT NULL, "PrincipalType" character varying(80) NOT NULL, "Role" character varying(120) NOT NULL, "HasBrokenInheritance" boolean NOT NULL DEFAULT false, "IsExternal" boolean NOT NULL DEFAULT false, "IsBroadAccess" boolean NOT NULL DEFAULT false);
-            CREATE TABLE IF NOT EXISTS "DiscoveredSharingLinks" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "Scope" character varying(300) NOT NULL, "Path" character varying(1500) NOT NULL, "LinkType" character varying(80) NOT NULL, "AllowsAnonymousAccess" boolean NOT NULL DEFAULT false, "AllowsExternalAccess" boolean NOT NULL DEFAULT false, "ExpiresAt" timestamp with time zone NULL);
-            CREATE TABLE IF NOT EXISTS "DiscoveredMetadataFields" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "LibraryId" uuid NULL, "Site" character varying(300) NOT NULL, "Library" character varying(300) NOT NULL, "Name" character varying(300) NOT NULL, "FieldType" character varying(80) NOT NULL, "Required" boolean NOT NULL DEFAULT false, "MissingValueCount" integer NOT NULL DEFAULT 0, "MappingRisk" character varying(50) NOT NULL);
-            CREATE TABLE IF NOT EXISTS "DiscoveredContentTypes" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "LibraryId" uuid NULL, "Name" character varying(300) NOT NULL, "Scope" character varying(1000) NOT NULL);
-            CREATE TABLE IF NOT EXISTS "RiskFindings" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "SourceFindingId" character varying(300) NOT NULL, "Category" character varying(120) NOT NULL, "Severity" character varying(50) NOT NULL, "Title" character varying(300) NOT NULL, "Description" character varying(2000) NOT NULL, "RecommendedAction" character varying(2000) NOT NULL, "Site" character varying(300) NOT NULL, "Location" character varying(1000) NOT NULL, "Path" character varying(1500) NOT NULL, "CreatedUtc" timestamp with time zone NOT NULL DEFAULT now());
-            CREATE TABLE IF NOT EXISTS "MigrationJobEvents" ("Id" uuid NOT NULL PRIMARY KEY, "JobId" uuid NOT NULL, "EventType" character varying(120) NOT NULL, "PreviousState" character varying(50) NULL, "NewState" character varying(50) NOT NULL, "Message" character varying(2000) NOT NULL, "Severity" character varying(50) NOT NULL, "CreatedAt" timestamp with time zone NOT NULL, "CorrelationId" character varying(100) NULL, "MetadataJson" text NOT NULL DEFAULT '{{}}');
-            CREATE TABLE IF NOT EXISTS "ValidationRuns" ("Id" uuid NOT NULL PRIMARY KEY, "MigrationJobId" uuid NOT NULL, "Status" character varying(50) NOT NULL, "StartedAt" timestamp with time zone NOT NULL, "CompletedAt" timestamp with time zone NULL, "SourceItemCount" integer NOT NULL DEFAULT 0, "TargetItemCount" integer NOT NULL DEFAULT 0, "PassedCount" integer NOT NULL DEFAULT 0, "WarningCount" integer NOT NULL DEFAULT 0, "FailedCount" integer NOT NULL DEFAULT 0, "Summary" character varying(2000) NOT NULL DEFAULT '', "ErrorMessage" character varying(2000) NULL);
-            CREATE TABLE IF NOT EXISTS "ValidationFindings" ("Id" uuid NOT NULL PRIMARY KEY, "ValidationRunId" uuid NOT NULL, "Severity" character varying(50) NOT NULL, "Category" character varying(120) NOT NULL, "Message" character varying(2000) NOT NULL, "SourcePath" character varying(1500) NOT NULL, "TargetPath" character varying(1500) NOT NULL, "RecommendedAction" character varying(2000) NOT NULL);
-            CREATE TABLE IF NOT EXISTS "ValidationItemResults" ("Id" uuid NOT NULL PRIMARY KEY, "ValidationRunId" uuid NOT NULL, "MigrationItemId" uuid NULL, "SourcePath" character varying(1500) NOT NULL, "TargetPath" character varying(1500) NOT NULL, "SourceSizeBytes" bigint NOT NULL DEFAULT 0, "TargetSizeBytes" bigint NOT NULL DEFAULT 0, "Status" character varying(50) NOT NULL, "DifferenceType" character varying(120) NOT NULL, "Message" character varying(2000) NOT NULL);
-            """);
+        var steps = new (string Name, string Sql)[]
+        {
+            ("DiscoveryRuns table", """CREATE TABLE IF NOT EXISTS "DiscoveryRuns" ("Id" uuid NOT NULL PRIMARY KEY, "Name" character varying(200) NOT NULL, "ProjectId" character varying(100) NULL, "ConnectionId" uuid NULL, "SourceType" character varying(80) NOT NULL, "Status" character varying(50) NOT NULL, "StartedAt" timestamp with time zone NOT NULL, "CompletedAt" timestamp with time zone NULL, "TotalSites" integer NOT NULL DEFAULT 0, "TotalWebs" integer NOT NULL DEFAULT 0, "TotalLibraries" integer NOT NULL DEFAULT 0, "TotalLists" integer NOT NULL DEFAULT 0, "TotalFolders" integer NOT NULL DEFAULT 0, "TotalFiles" integer NOT NULL DEFAULT 0, "TotalPermissions" integer NOT NULL DEFAULT 0, "TotalSharingLinks" integer NOT NULL DEFAULT 0, "TotalRiskFindings" integer NOT NULL DEFAULT 0, "ReadinessScore" integer NOT NULL DEFAULT 0, "ErrorMessage" character varying(2000) NULL, "CreatedUtc" timestamp with time zone NOT NULL DEFAULT now());"""),
+            ("DiscoveredSites table", """CREATE TABLE IF NOT EXISTS "DiscoveredSites" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "ExternalId" character varying(200) NOT NULL, "Title" character varying(300) NOT NULL, "Url" character varying(1000) NOT NULL, "Department" character varying(100) NOT NULL, "Description" character varying(1000) NOT NULL, "FileCount" integer NOT NULL DEFAULT 0, "FolderCount" integer NOT NULL DEFAULT 0, "SizeBytes" bigint NOT NULL DEFAULT 0, "CreatedAt" timestamp with time zone NULL, "ModifiedAt" timestamp with time zone NULL);"""),
+            ("DiscoveredWebs table", """CREATE TABLE IF NOT EXISTS "DiscoveredWebs" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "SiteId" uuid NULL, "ExternalId" character varying(200) NOT NULL, "Title" character varying(300) NOT NULL, "Url" character varying(1000) NOT NULL, "Description" character varying(1000) NOT NULL);"""),
+            ("DiscoveredLibraries table", """CREATE TABLE IF NOT EXISTS "DiscoveredLibraries" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "SiteId" uuid NULL, "WebId" uuid NULL, "ExternalId" character varying(200) NOT NULL, "Title" character varying(300) NOT NULL, "Type" character varying(100) NOT NULL, "Url" character varying(1000) NOT NULL, "FileCount" integer NOT NULL DEFAULT 0, "FolderCount" integer NOT NULL DEFAULT 0, "SizeBytes" bigint NOT NULL DEFAULT 0, "BrokenInheritance" boolean NOT NULL DEFAULT false);"""),
+            ("DiscoveredLists table", """CREATE TABLE IF NOT EXISTS "DiscoveredLists" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "SiteId" uuid NULL, "WebId" uuid NULL, "ExternalId" character varying(200) NOT NULL, "Title" character varying(300) NOT NULL, "Description" character varying(1000) NOT NULL, "ItemCount" integer NOT NULL DEFAULT 0);"""),
+            ("DiscoveredFolders table", """CREATE TABLE IF NOT EXISTS "DiscoveredFolders" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "LibraryId" uuid NULL, "ExternalId" character varying(200) NOT NULL, "Name" character varying(300) NOT NULL, "Path" character varying(1500) NOT NULL, "Depth" integer NOT NULL DEFAULT 0, "FileCount" integer NOT NULL DEFAULT 0, "SizeBytes" bigint NOT NULL DEFAULT 0, "Archived" boolean NOT NULL DEFAULT false, "LongPathRisk" boolean NOT NULL DEFAULT false, "DuplicateIndicator" boolean NOT NULL DEFAULT false);"""),
+            ("DiscoveredFiles table", """CREATE TABLE IF NOT EXISTS "DiscoveredFiles" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "LibraryId" uuid NULL, "FolderId" uuid NULL, "Name" character varying(300) NOT NULL, "Path" character varying(1500) NOT NULL, "Url" character varying(1500) NOT NULL, "SizeBytes" bigint NOT NULL DEFAULT 0, "CreatedAt" timestamp with time zone NULL, "ModifiedAt" timestamp with time zone NULL, "LargeFileRisk" boolean NOT NULL DEFAULT false, "LongPathRisk" boolean NOT NULL DEFAULT false, "DuplicateIndicator" boolean NOT NULL DEFAULT false);"""),
+            ("DiscoveredPermissions table", """CREATE TABLE IF NOT EXISTS "DiscoveredPermissions" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "Site" character varying(300) NOT NULL, "Scope" character varying(1000) NOT NULL, "Principal" character varying(300) NOT NULL, "PrincipalType" character varying(80) NOT NULL, "Role" character varying(120) NOT NULL, "HasBrokenInheritance" boolean NOT NULL DEFAULT false, "IsExternal" boolean NOT NULL DEFAULT false, "IsBroadAccess" boolean NOT NULL DEFAULT false);"""),
+            ("DiscoveredSharingLinks table", """CREATE TABLE IF NOT EXISTS "DiscoveredSharingLinks" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "Scope" character varying(300) NOT NULL, "Path" character varying(1500) NOT NULL, "LinkType" character varying(80) NOT NULL, "AllowsAnonymousAccess" boolean NOT NULL DEFAULT false, "AllowsExternalAccess" boolean NOT NULL DEFAULT false, "ExpiresAt" timestamp with time zone NULL);"""),
+            ("DiscoveredMetadataFields table", """CREATE TABLE IF NOT EXISTS "DiscoveredMetadataFields" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "LibraryId" uuid NULL, "Site" character varying(300) NOT NULL, "Library" character varying(300) NOT NULL, "Name" character varying(300) NOT NULL, "FieldType" character varying(80) NOT NULL, "Required" boolean NOT NULL DEFAULT false, "MissingValueCount" integer NOT NULL DEFAULT 0, "MappingRisk" character varying(50) NOT NULL);"""),
+            ("DiscoveredContentTypes table", """CREATE TABLE IF NOT EXISTS "DiscoveredContentTypes" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "LibraryId" uuid NULL, "Name" character varying(300) NOT NULL, "Scope" character varying(1000) NOT NULL);"""),
+            ("RiskFindings table", """CREATE TABLE IF NOT EXISTS "RiskFindings" ("Id" uuid NOT NULL PRIMARY KEY, "DiscoveryRunId" uuid NOT NULL, "SourceFindingId" character varying(300) NOT NULL, "Category" character varying(120) NOT NULL, "Severity" character varying(50) NOT NULL, "Title" character varying(300) NOT NULL, "Description" character varying(2000) NOT NULL, "RecommendedAction" character varying(2000) NOT NULL, "Site" character varying(300) NOT NULL, "Location" character varying(1000) NOT NULL, "Path" character varying(1500) NOT NULL, "CreatedUtc" timestamp with time zone NOT NULL DEFAULT now());"""),
+            ("MigrationJobEvents table", """CREATE TABLE IF NOT EXISTS "MigrationJobEvents" ("Id" uuid NOT NULL PRIMARY KEY, "JobId" uuid NOT NULL, "EventType" character varying(120) NOT NULL, "PreviousState" character varying(50) NULL, "NewState" character varying(50) NOT NULL, "Message" character varying(2000) NOT NULL, "Severity" character varying(50) NOT NULL, "CreatedAt" timestamp with time zone NOT NULL, "CorrelationId" character varying(100) NULL, "MetadataJson" text NOT NULL DEFAULT '{{}}');"""),
+            ("ValidationRuns table", """CREATE TABLE IF NOT EXISTS "ValidationRuns" ("Id" uuid NOT NULL PRIMARY KEY, "MigrationJobId" uuid NOT NULL, "Status" character varying(50) NOT NULL, "StartedAt" timestamp with time zone NOT NULL, "CompletedAt" timestamp with time zone NULL, "SourceItemCount" integer NOT NULL DEFAULT 0, "TargetItemCount" integer NOT NULL DEFAULT 0, "PassedCount" integer NOT NULL DEFAULT 0, "WarningCount" integer NOT NULL DEFAULT 0, "FailedCount" integer NOT NULL DEFAULT 0, "Summary" character varying(2000) NOT NULL DEFAULT '', "ErrorMessage" character varying(2000) NULL);"""),
+            ("ValidationFindings table", """CREATE TABLE IF NOT EXISTS "ValidationFindings" ("Id" uuid NOT NULL PRIMARY KEY, "ValidationRunId" uuid NOT NULL, "Severity" character varying(50) NOT NULL, "Category" character varying(120) NOT NULL, "Message" character varying(2000) NOT NULL, "SourcePath" character varying(1500) NOT NULL, "TargetPath" character varying(1500) NOT NULL, "RecommendedAction" character varying(2000) NOT NULL);"""),
+            ("ValidationItemResults table", """CREATE TABLE IF NOT EXISTS "ValidationItemResults" ("Id" uuid NOT NULL PRIMARY KEY, "ValidationRunId" uuid NOT NULL, "MigrationItemId" uuid NULL, "SourcePath" character varying(1500) NOT NULL, "TargetPath" character varying(1500) NOT NULL, "SourceSizeBytes" bigint NOT NULL DEFAULT 0, "TargetSizeBytes" bigint NOT NULL DEFAULT 0, "Status" character varying(50) NOT NULL, "DifferenceType" character varying(120) NOT NULL, "Message" character varying(2000) NOT NULL);""")
+        };
+
+        foreach (var step in steps)
+        {
+            await ExecuteSchemaStepAsync(dbContext, logger, step.Name, step.Sql);
+        }
     }
 }
 
-static async Task EnsureAuditLogsTableAsync(ZmsDbContext dbContext)
+static async Task EnsureAuditLogsTableAsync(ZmsDbContext dbContext, ILogger logger)
 {
     if (dbContext.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true)
     {
-        await dbContext.Database.ExecuteSqlRawAsync("""
+        await ExecuteSchemaStepAsync(dbContext, logger, "SQLite AuditLogs table", """
             CREATE TABLE IF NOT EXISTS "AuditLogs"
             (
                 "Id" TEXT NOT NULL PRIMARY KEY,
@@ -620,7 +701,7 @@ static async Task EnsureAuditLogsTableAsync(ZmsDbContext dbContext)
 
     if (dbContext.Database.ProviderName?.Contains("SqlServer", StringComparison.OrdinalIgnoreCase) == true)
     {
-        await dbContext.Database.ExecuteSqlRawAsync("""
+        await ExecuteSchemaStepAsync(dbContext, logger, "SQL Server AuditLogs table", """
             IF OBJECT_ID(N'dbo.AuditLogs', N'U') IS NULL
             BEGIN
                 CREATE TABLE dbo.AuditLogs
@@ -654,7 +735,7 @@ static async Task EnsureAuditLogsTableAsync(ZmsDbContext dbContext)
 
     if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
     {
-        await dbContext.Database.ExecuteSqlRawAsync("""
+        await ExecuteSchemaStepAsync(dbContext, logger, "Postgres AuditLogs table", """
             CREATE TABLE IF NOT EXISTS "AuditLogs"
             (
                 "Id" uuid NOT NULL PRIMARY KEY,
@@ -672,6 +753,27 @@ static async Task EnsureAuditLogsTableAsync(ZmsDbContext dbContext)
             CREATE INDEX IF NOT EXISTS "IX_AuditLogs_CorrelationId" ON "AuditLogs"("CorrelationId");
             """);
     }
+}
+
+static async Task ExecuteSchemaStepAsync(ZmsDbContext dbContext, ILogger logger, string stepName, string sql)
+{
+    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+    logger.LogInformation("Running database schema step: {SchemaStep}", stepName);
+    await dbContext.Database.ExecuteSqlRawAsync(sql, timeoutCts.Token);
+    logger.LogInformation("Completed database schema step: {SchemaStep}", stepName);
+}
+
+static string GetQuotedTableName(string statement)
+{
+    var firstQuote = statement.IndexOf('"');
+    if (firstQuote < 0)
+    {
+        return "table";
+    }
+
+    var secondQuote = statement.IndexOf('"', firstQuote + 1);
+    return secondQuote > firstQuote ? statement.Substring(firstQuote + 1, secondQuote - firstQuote - 1) : "table";
 }
 
 static async Task<HashSet<string>> GetSqliteColumnsAsync(ZmsDbContext dbContext, string tableName)
@@ -724,7 +826,19 @@ static string[] GetCorsAllowedOrigins(IConfiguration configuration)
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToArray();
 
-    return origins.Length > 0 ? origins : ["http://localhost:5173", "http://127.0.0.1:5173"];
+    var filteredOrigins = origins.Where(origin => origin != "*").ToArray();
+    if (filteredOrigins.Length > 0)
+    {
+        return filteredOrigins;
+    }
+
+    var environment = configuration["ASPNETCORE_ENVIRONMENT"] ?? configuration["DOTNET_ENVIRONMENT"];
+    if (string.Equals(environment, "Production", StringComparison.OrdinalIgnoreCase))
+    {
+        return ["https://zms-migration-suite.vercel.app"];
+    }
+
+    return ["http://localhost:5173", "http://127.0.0.1:5173"];
 }
 
 static AuthorizationPolicy BuildZmsRolePolicy(IConfiguration configuration, params string[] allowedRoles)

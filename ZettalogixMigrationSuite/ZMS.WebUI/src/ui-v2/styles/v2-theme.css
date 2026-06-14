@@ -144,6 +144,27 @@
   padding: 28px;
 }
 
+.zms-v2-alert {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 18px;
+  border: 1px solid rgba(246, 173, 54, 0.34);
+  border-radius: var(--v2-radius);
+  background: rgba(246, 173, 54, 0.1);
+  color: var(--v2-text);
+  padding: 12px 14px;
+}
+
+.zms-v2-alert strong {
+  color: var(--v2-warning);
+}
+
+.zms-v2-alert span {
+  color: var(--v2-muted);
+}
+
 .zms-v2-page-header {
   display: flex;
   align-items: flex-end;
