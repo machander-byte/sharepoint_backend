@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ZMS.API.Diagnostics;
 using ZMS.API.Middleware;
 using ZMS.API.Security;
 using ZMS.Application.DependencyInjection;
@@ -41,6 +42,7 @@ if (!string.IsNullOrWhiteSpace(sentryDsn))
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = maxRequestBodySize);
 
 builder.Services.AddProblemDetails();
+builder.Services.AddSingleton<DatabaseStartupState>();
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = maxRequestBodySize;
@@ -147,30 +149,49 @@ app.MapGet("/", () => Results.Ok(new
 })).AllowAnonymous();
 app.MapControllers();
 
-await EnsureDatabaseCreatedAsync(app.Services, app.Logger);
+await EnsureDatabaseCreatedAsync(app.Services, app.Logger, app.Configuration);
 
 app.Run();
 
-static async Task EnsureDatabaseCreatedAsync(IServiceProvider services, ILogger logger)
+static async Task EnsureDatabaseCreatedAsync(IServiceProvider services, ILogger logger, IConfiguration configuration)
 {
     using var scope = services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<ZmsDbContext>();
+    var startupState = scope.ServiceProvider.GetRequiredService<DatabaseStartupState>();
+    var provider = dbContext.Database.ProviderName ?? "unknown";
 
-    if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+    startupState.MarkStarting(provider);
+
+    try
     {
-        await EnsurePostgresSchemaAsync(dbContext);
+        if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            await EnsurePostgresSchemaAsync(dbContext);
+            await EnsureEnterpriseTablesAsync(dbContext);
+            await EnsureAuditLogsTableAsync(dbContext);
+            await ApplyMigrationsIfSafeAsync(dbContext, logger);
+            await EnablePostgresRowLevelSecurityAsync(dbContext);
+            startupState.MarkSucceeded(provider);
+            return;
+        }
+
+        await dbContext.Database.EnsureCreatedAsync();
+        await EnsureMigrationJobColumnsAsync(dbContext);
         await EnsureEnterpriseTablesAsync(dbContext);
         await EnsureAuditLogsTableAsync(dbContext);
         await ApplyMigrationsIfSafeAsync(dbContext, logger);
-        await EnablePostgresRowLevelSecurityAsync(dbContext);
-        return;
+        startupState.MarkSucceeded(provider);
     }
+    catch (Exception ex)
+    {
+        startupState.MarkFailed(provider, ex);
+        logger.LogError(ex, "Database startup initialization failed. The API will start in degraded mode so diagnostics endpoints remain available.");
 
-    await dbContext.Database.EnsureCreatedAsync();
-    await EnsureMigrationJobColumnsAsync(dbContext);
-    await EnsureEnterpriseTablesAsync(dbContext);
-    await EnsureAuditLogsTableAsync(dbContext);
-    await ApplyMigrationsIfSafeAsync(dbContext, logger);
+        if (configuration.GetValue<bool>("Database:FailFastOnStartup"))
+        {
+            throw;
+        }
+    }
 }
 
 static async Task ApplyMigrationsIfSafeAsync(ZmsDbContext dbContext, ILogger logger)

@@ -65,7 +65,12 @@ public static class InfrastructureServiceCollectionExtensions
 
             if (IsPostgresProvider(databaseProvider))
             {
-                options.UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.EnableRetryOnFailure());
+                var commandTimeoutSeconds = configuration.GetValue<int?>("Database:CommandTimeoutSeconds") ?? 120;
+                options.UseNpgsql(connectionString, npgsqlOptions =>
+                {
+                    npgsqlOptions.EnableRetryOnFailure();
+                    npgsqlOptions.CommandTimeout(commandTimeoutSeconds);
+                });
                 return;
             }
 

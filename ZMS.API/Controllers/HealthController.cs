@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using ZMS.API.Diagnostics;
 using ZMS.Core.Interfaces;
 using ZMS.Infrastructure.Persistence;
 
@@ -16,17 +17,20 @@ public class HealthController : ControllerBase
     private readonly ZmsDbContext _dbContext;
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
+    private readonly DatabaseStartupState _databaseStartupState;
 
     public HealthController(
         IQueueDiagnostics queueDiagnostics,
         ZmsDbContext dbContext,
         IWebHostEnvironment environment,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        DatabaseStartupState databaseStartupState)
     {
         _queueDiagnostics = queueDiagnostics;
         _dbContext = dbContext;
         _environment = environment;
         _configuration = configuration;
+        _databaseStartupState = databaseStartupState;
     }
 
     [HttpGet]
@@ -34,8 +38,9 @@ public class HealthController : ControllerBase
     {
         return Ok(new
         {
-            Status = "Healthy",
+            Status = _databaseStartupState.Snapshot.Status == "Succeeded" ? "Healthy" : "Degraded",
             UtcNow = DateTimeOffset.UtcNow,
+            DatabaseStartup = _databaseStartupState.Snapshot,
             Queue = new
             {
                 _queueDiagnostics.Provider,
@@ -62,6 +67,7 @@ public class HealthController : ControllerBase
             Environment = _environment.EnvironmentName,
             deployment.Commit,
             deployment.BuildTime,
+            DatabaseStartup = _databaseStartupState.Snapshot,
             StartedUtc,
             UtcNow = DateTimeOffset.UtcNow
         });
@@ -81,8 +87,9 @@ public class HealthController : ControllerBase
             _queueDiagnostics.StatusMessage
         };
 
-        var healthy = database.Healthy;
-        var status = healthy ? "Healthy" : "Unhealthy";
+        var startup = _databaseStartupState.Snapshot;
+        var healthy = database.Healthy && startup.Status == "Succeeded";
+        var status = healthy ? "Healthy" : "Degraded";
 
         return StatusCode(healthy ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable, new
         {
@@ -92,6 +99,7 @@ public class HealthController : ControllerBase
             StartedUtc,
             UptimeSeconds = (long)(DateTimeOffset.UtcNow - StartedUtc).TotalSeconds,
             Deployment = GetDeploymentFingerprint(),
+            DatabaseStartup = startup,
             Database = database,
             Queue = queue
         });
@@ -115,8 +123,15 @@ public class HealthController : ControllerBase
     {
         try
         {
-            var canConnect = await _dbContext.Database.CanConnectAsync(cancellationToken);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
+
+            var canConnect = await _dbContext.Database.CanConnectAsync(timeoutCts.Token);
             return new DependencyStatus(canConnect, _dbContext.Database.ProviderName ?? "unknown", canConnect ? "Connected" : "Connection failed");
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return new DependencyStatus(false, _dbContext.Database.ProviderName ?? "unknown", "Timed out after 5 seconds");
         }
         catch (Exception ex)
         {
