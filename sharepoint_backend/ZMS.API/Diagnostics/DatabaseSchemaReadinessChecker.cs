@@ -5,6 +5,10 @@ namespace ZMS.API.Diagnostics;
 
 public sealed class DatabaseSchemaReadinessChecker
 {
+    private static readonly SemaphoreSlim ReadinessLock = new(1, 1);
+    private static readonly object CacheSyncRoot = new();
+    private static DatabaseSchemaReadinessSnapshot? cachedSnapshot;
+
     private static readonly string[] RequiredTables =
     [
         "Connections",
@@ -43,7 +47,36 @@ public sealed class DatabaseSchemaReadinessChecker
     public async Task<DatabaseSchemaReadinessSnapshot> CheckAsync(CancellationToken cancellationToken)
     {
         var provider = dbContext.Database.ProviderName ?? "unknown";
+        var cacheSeconds = configuration.GetValue<int?>("Database:SchemaReadinessCacheSeconds") ?? 30;
 
+        var cached = TryGetCachedSnapshot(provider, cacheSeconds);
+        if (cached is not null)
+        {
+            return cached;
+        }
+
+        await ReadinessLock.WaitAsync(cancellationToken);
+
+        try
+        {
+            cached = TryGetCachedSnapshot(provider, cacheSeconds);
+            if (cached is not null)
+            {
+                return cached;
+            }
+
+            var snapshot = await CheckUncachedAsync(provider, cancellationToken);
+            CacheSnapshot(snapshot);
+            return snapshot;
+        }
+        finally
+        {
+            ReadinessLock.Release();
+        }
+    }
+
+    private async Task<DatabaseSchemaReadinessSnapshot> CheckUncachedAsync(string provider, CancellationToken cancellationToken)
+    {
         try
         {
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -97,6 +130,28 @@ public sealed class DatabaseSchemaReadinessChecker
                 MissingTables: [],
                 ErrorType: ex.GetType().Name,
                 LastCheckedUtc: DateTimeOffset.UtcNow);
+        }
+    }
+
+    private static DatabaseSchemaReadinessSnapshot? TryGetCachedSnapshot(string provider, int cacheSeconds)
+    {
+        lock (CacheSyncRoot)
+        {
+            if (cachedSnapshot is null || !string.Equals(cachedSnapshot.Provider, provider, StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            var age = DateTimeOffset.UtcNow - cachedSnapshot.LastCheckedUtc;
+            return age <= TimeSpan.FromSeconds(cacheSeconds) ? cachedSnapshot : null;
+        }
+    }
+
+    private static void CacheSnapshot(DatabaseSchemaReadinessSnapshot snapshot)
+    {
+        lock (CacheSyncRoot)
+        {
+            cachedSnapshot = snapshot;
         }
     }
 

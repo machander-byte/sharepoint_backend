@@ -43,10 +43,6 @@ const fallbackSnapshot: V2ReadOnlySnapshot = {
   errors: []
 };
 
-interface HealthResponse {
-  status?: string;
-}
-
 interface StatusResponse {
   status?: string;
   databaseStartup?: {
@@ -129,21 +125,19 @@ async function loadRuntimeStatus(errors: string[]): Promise<V2RuntimeStatus> {
   }
 
   try {
-    const [healthResponse, statusResponse, versionResponse] = await Promise.all([
-      fetch(`${baseUrl}/api/health`),
+    const [statusResponse, versionResponse] = await Promise.all([
       fetch(`${baseUrl}/api/status`),
       fetch(`${baseUrl}/api/version`)
     ]);
 
-    if (!healthResponse.ok || !versionResponse.ok) {
+    if (!versionResponse.ok) {
       throw new Error("One or more runtime endpoints returned a non-success status.");
     }
 
-    const health = (await healthResponse.json()) as HealthResponse;
     const status = (await statusResponse.json()) as StatusResponse;
     const version = (await versionResponse.json()) as VersionResponse;
-    const healthy = health.status === "Healthy" && status.status === "Healthy";
-    const degraded = health.status === "Degraded" || status.status === "Degraded" || !statusResponse.ok;
+    const healthy = statusResponse.ok && status.status === "Healthy";
+    const degraded = status.status === "Degraded" || !statusResponse.ok;
 
     return {
       apiStatus: healthy ? "Healthy" : degraded ? "Degraded" : "Unavailable",
