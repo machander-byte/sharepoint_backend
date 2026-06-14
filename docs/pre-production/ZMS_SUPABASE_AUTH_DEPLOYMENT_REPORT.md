@@ -1,44 +1,34 @@
 # ZMS Supabase Auth Deployment Report
 
-Status date: 2026-06-13
+Status date: 2026-06-14
 
 ## Supabase Project
 
 | Item | Result |
 | --- | --- |
 | Project ref | `hxptmbphcdyzhmwnimwh` |
-| Project URL | `https://hxptmbphcdyzhmwnimwh.supabase.co` |
-| Dashboard status | Healthy |
-| Region | South Asia (Mumbai) |
 | Frontend Site URL | `https://zms-migration-suite.vercel.app` |
-
-## Auth URL Configuration
-
-Verified redirect allow-list entries visible in the Supabase dashboard:
-
-- `http://localhost:5173/*`
-- `http://127.0.0.1:5173/auth/callback`
-- `http://localhost:5173/auth/callback`
-- `https://sharepoint-one.vercel.app/`
-- `https://sharepoint-one.vercel.app/auth/callback`
-- `https://zms-migration-suite.vercel.app/auth/callback`
+| Redirect URL | `https://zms-migration-suite.vercel.app/auth/callback` present |
 
 ## Browser Auth Result
 
-Supabase browser auth completed during this pass and the deployed frontend opened an authenticated route. The deployed backend API could not be validated because Render is failing to start.
+| Check | Result |
+| --- | --- |
+| Login page | Loaded |
+| Google/Supabase sign-in | Passed in browser |
+| Authenticated app route | Opened |
+| Authenticated `/v2` | Opened |
+| Authenticated `/v2/command-center` | Opened |
+| Authenticated `/v2/monitor` | Opened |
 
-## Security Findings
+Reviewer credentials must be shared separately. No passwords are included in this report.
 
-Supabase Advisor showed 19 issues, including critical RLS-disabled findings on public tables such as `DataProtectionKeys`, `DiscoveryRuns`, `DiscoveredSites`, and `DiscoveredWebs`.
+## Security Notes
 
-Code hardening was added so backend startup enables RLS on the ZMS public tables after schema creation and migrations. This must be verified after Render database authentication is fixed and the backend starts.
-
-## Blockers
-
-- Render `ConnectionStrings__ZmsDatabase` is invalid or stale and must be updated/rotated.
-- Backend protected API calls were not validated from the deployed frontend.
-- Audit table records were not queried in this pass.
+- Frontend uses publishable/browser-safe Supabase configuration.
+- Backend uses database connection only in Render.
+- Previously pasted credentials remain `ROTATE REQUIRED` before broader company submission.
 
 ## Decision
 
-Supabase Auth URL configuration is ready for the current Vercel frontend URL, but full Supabase deployment validation is blocked by the Render database authentication failure.
+Supabase Auth is ready for final project / pre-production review.

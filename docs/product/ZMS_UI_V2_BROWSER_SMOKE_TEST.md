@@ -4,106 +4,52 @@ Status date: 2026-06-14
 
 ## Scope
 
-This pass focused on:
+Browser smoke for the deployed final project / pre-production demo:
 
-- Merging the `/login` screen into the UI V2 visual design.
-- Verifying unauthenticated `/v2` route protection.
-- Verifying direct V2 subpath protection with `/v2/monitor`.
-- Confirming frontend build integrity after V2 read-only adapter wiring.
-
-Authenticated `/v2` page-by-page browser testing is blocked in this environment because no real Supabase browser session was available. A fake local browser session was not accepted by the Supabase client, and the auth guard was not weakened.
-
-## Browser Environment
-
-| Item | Value |
-| --- | --- |
-| Frontend URL | `http://127.0.0.1:5173` |
-| Viewports checked | 1440x1000, 390x844 |
-| Browser console | 0 errors; React Router future-flag warnings only |
-| Backend | Not required for login smoke; V2 adapter preserves fallback if API is offline |
+- `https://zms-migration-suite.vercel.app/login`
+- protected `/v2` routes
+- authenticated V2 reviewer pages
+- backend runtime status shown in V2
 
 ## Smoke Results
 
-| Page / Flow | Status | Issue found | Fix applied | Screenshot path | Remaining notes |
-| --- | --- | --- | --- | --- | --- |
-| `/login` desktop | Passed | Previous login did not match V2 dark premium design | Restyled login as dark V2 access screen with validation evidence panel | Playwright snapshot only | No console errors |
-| `/login` mobile | Passed | Previous narrow-layout overflow was already fixed; rechecked after redesign | Kept responsive grid and full-width inputs/buttons | Playwright snapshot only | Page scrolls vertically as expected, no horizontal overflow |
-| `/v2` unauthenticated | Passed | None | Existing auth guard preserved | Not captured | Redirects to `/login` |
-| `/v2/monitor` unauthenticated | Passed | Exact V2 subpaths were not previously supported | Changed route to `/v2/*` and added V2 subpath page mapping | Not captured | Redirects to redesigned `/login` |
-| Command Center authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| Sources authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| Destinations authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| Assess authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| Plan authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| Migrate authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| Monitor authenticated | Blocked | Real Supabase session unavailable | Added read-only snapshot area for live/fallback API data | Not captured | Needs real session for authenticated API reads |
-| Validate authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| Reports authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| AI Advisor authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| Governance authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-| Settings authenticated | Blocked | Real Supabase session unavailable | Not applicable | Not captured | Build verifies component compiles |
-
-## UI Bugs Fixed
-
-- Login screen now matches the UI V2 dark premium visual language.
-- Login screen no longer shows old static migration counters as current live data.
-- Login screen now shows neutral workspace, tutorial, API diagnostics, and pilot-first safety cues.
-- `/v2/*` subpaths are supported; direct links such as `/v2/monitor` route through the V2 shell when authenticated.
-- V2 read-only adapter now calls safe APIs through existing frontend services only when runtime is healthy; degraded/offline states show empty live-data values rather than mock records.
-- `/v2/tutorial` was added behind the existing auth guard.
-
-## APIs Wired Into V2 Adapter
-
-The V2 adapter attempts:
-
-- `/api/health`
-- `/api/status`
-- `/api/version`
-- Connections through existing `zmsApi.getConnections()`
-- Latest migration execution job through existing `zmsApi.getLatestMigrationExecutionJob()`
-- Latest readiness result through existing `zmsApi.getLatestReadinessAssessment()`
-- Latest migration plan through existing `zmsApi.getLatestMigrationPlan()`
-- Latest workflow validation through existing `zmsApi.getLatestWorkflowValidation()`
-- Reports through existing `zmsApi.getReports()`
-- AI recommendations through existing `zmsApi.getAIRecommendations()`
-
-Fallback adapter data remains active when the backend is offline or authenticated calls are unavailable.
-
-## Verification Commands
-
-```powershell
-npm run build
-dotnet build .\Zettalogix.MigrationSuite.sln
-dotnet test .\Zettalogix.MigrationSuite.sln --no-build
-```
-
-## Results
-
-| Check | Result |
-| --- | --- |
-| Frontend build | Passed |
-| Backend build | Passed, 0 warnings, 0 errors |
-| Backend tests | Passed, 46/46 |
-
-## Remaining Blockers
-
-- Real authenticated Supabase session is required for page-by-page `/v2` browser smoke testing.
-- Authenticated V2 read-only API behavior still needs browser verification.
-- Route-level lazy loading is still recommended because the Vite chunk-size warning remains.
-
-## 2026-06-13 Deployed Smoke Addendum
-
 | Page / Flow | Result |
 | --- | --- |
-| `https://zms-migration-suite.vercel.app/login` | Loads |
-| Clean-session `/login` | Loads V2 login design and visible build fingerprint `ZMS frontend build 1403fb2`; old counters absent |
-| Unauthenticated `/v2` | Redirects to `/login` |
-| Unauthenticated `/v2/tutorial` | Redirects to `/login` |
-| Unauthenticated `/v2/monitor` | Redirects to `/login` |
-| Session-bearing `/v2` | Loads current UI V2 shell |
-| Session-bearing `/v2/monitor` | Loads current UI V2 shell |
-| Session-bearing `/v2/command-center` | Loads current UI V2 shell |
-| Backend API data | Anonymous diagnostics reachable; API-backed authenticated data still blocked by degraded backend/auth session |
-| Browser page errors | 0 page errors observed during latest V2 shell check |
+| `/login` | Passed; latest V2 design and fingerprint `694069a` |
+| `/v2` unauthenticated | Redirects to `/login` |
+| `/v2/tutorial` unauthenticated | Redirects to `/login` |
+| `/v2/monitor` unauthenticated | Redirects to `/login` |
+| Google/Supabase login | Passed in browser |
+| Authenticated `/v2` | Passed; runtime `Healthy` |
+| Authenticated `/v2/command-center` | Passed |
+| Authenticated `/v2/sources` | Passed |
+| Authenticated `/v2/destinations` | Passed |
+| Authenticated `/v2/assess` | Passed |
+| Authenticated `/v2/plan` | Passed |
+| Authenticated `/v2/migrate` | Passed |
+| Authenticated `/v2/monitor` | Passed |
+| Authenticated `/v2/validate` | Passed |
+| Authenticated `/v2/reports` | Passed |
+| Authenticated `/v2/ai-advisor` | Passed |
+| Authenticated `/v2/governance` | Passed |
+| Authenticated `/v2/settings` | Passed |
+| Authenticated `/v2/tutorial` | Passed |
+| Browser console after walkthrough | 0 errors |
+| Subscription/billing UI | Not present |
 
-Deployment note: the local build contains the current UI V2 route integration and was pushed to GitHub `master`; the frontend deployment fingerprint is `1403fb2`. The production Vercel alias now points to a Vercel CLI/manual deployment from `ZettalogixMigrationSuite/ZMS.WebUI`. API-backed V2 validation remains blocked by Render degraded status and lack of a real authenticated Supabase browser session.
+## Runtime Result
+
+V2 displays:
+
+- Runtime: `Healthy`
+- Queue: `Queue empty`
+- API: `1.0.0.0`
+- Database startup: `Skipped`
+- Data source: `Live API`
+
+## Notes
+
+- V2 runtime reads `/api/status` and `/api/version`.
+- V2 no longer blocks on optional latest-record endpoints.
+- Live domain record counts are shown as zero unless loaded by a dedicated feature page.
+- Historical migration evidence remains labeled separately from current live records.

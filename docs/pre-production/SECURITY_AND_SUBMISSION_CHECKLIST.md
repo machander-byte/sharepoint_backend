@@ -126,3 +126,16 @@ Mark the product ready for company review only when:
 - `npm audit` reports 6 frontend dependency findings: 5 moderate and 1 high. The high finding is in the Vite/esbuild dependency chain and requires a dependency upgrade plan.
 - A conservative secret-pattern scan reported only placeholders, test redaction strings, or documented variable names by path/line; no secret values were printed in this report.
 - `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, Microsoft client secret, and Supabase database password remain ROTATE REQUIRED before company submission.
+
+## 2026-06-14 Final Demo Security Addendum
+
+- Backend normal startup no longer runs heavy schema initialization.
+- Controlled database schema initialization is gated by `ZMS_RUN_DB_SCHEMA_INIT`; production default is false.
+- Render backend reports `/api/status = 200 Healthy`.
+- Backend security headers are present on API responses.
+- Backend CORS preflight passed for `https://zms-migration-suite.vercel.app`.
+- Vercel final bundle contains the public Render backend URL and frontend fingerprint `694069a`.
+- Authenticated `/v2` browser walkthrough completed with 0 console errors.
+- No secret values were added to source, frontend code, docs, or reports in this pass.
+- Previously pasted credentials remain `ROTATE REQUIRED` before broader company submission.
+- Reviewer credentials must be shared separately and must not be written into Git, docs, screenshots, or chat transcripts.

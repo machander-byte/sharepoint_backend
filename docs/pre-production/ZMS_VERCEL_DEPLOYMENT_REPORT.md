@@ -6,91 +6,58 @@ Status date: 2026-06-14
 
 Frontend deployment target for `ZettalogixMigrationSuite/ZMS.WebUI`.
 
-## Local Verification
-
-| Check | Result |
-| --- | --- |
-| `npm ci` | Passed |
-| `npm run build` | Passed |
-| Vite chunk warning | Present, accepted for this pass |
-| `vercel.json` install command | `npm ci` |
-| `vercel.json` build command | `npm run build` |
-| `vercel.json` output directory | `dist` |
-| SPA rewrite | Present |
-
-`npm ci` and `npm audit` reported 6 dependency vulnerabilities: 5 moderate and 1 high. Fixes require dependency updates, including a Vite/esbuild major-version path for the high advisory.
-
 ## Vercel Status
 
 | Item | Result |
 | --- | --- |
-| Vercel dashboard access | Available in browser |
-| Vercel CLI | Available through `npx vercel` |
-| Vercel CLI auth | Available as `badugujashwanth-4113` after device auth |
-| Production frontend URL | `https://zms-migration-suite.vercel.app` |
-| Production URL HTTP check | 200 OK |
-| Current full-project Git branch | `master` pushed |
-| Application source commit | `1403fb2` |
-| Frontend source folder | `ZettalogixMigrationSuite/ZMS.WebUI` |
-| Deployment method | Vercel CLI/manual source deploy from the frontend folder |
-| Latest production deployment | `zms-migration-suite-72alhjgph-badugujashwanth-4113s-projects.vercel.app` |
-| Production alias | `https://zms-migration-suite.vercel.app` |
-| Build fingerprint shown on clean `/login` | `ZMS frontend build 1403fb2` |
-| `/login` clean session | Loads V2 login design; old static counters removed |
-| `/v2` unauthenticated | Redirects to `/login` |
-| `/v2/monitor` unauthenticated | Redirects to `/login` |
-| `/v2`, session-bearing browser | Loads current UI V2 shell |
-| `/v2/command-center`, session-bearing browser | Loads current UI V2 shell |
-| Backend API connectivity | Anonymous diagnostics reachable; API is degraded |
-| CORS result | Not fully verifiable until authenticated API calls are tested |
+| Project | `zms-migration-suite` |
+| Frontend URL | `https://zms-migration-suite.vercel.app` |
+| Source folder | `ZettalogixMigrationSuite/ZMS.WebUI` |
+| Deployment method | Vercel CLI/manual source deploy |
+| Final deployment | `zms-migration-suite-mmrudivb2-badugujashwanth-4113s-projects.vercel.app` |
+| Public alias | `https://zms-migration-suite.vercel.app` |
+| Frontend fingerprint | `694069a` |
+| Backend API base | `https://sharepoint-backend-g5vc.onrender.com` |
 
-## Deployment Gap
-
-The deployed frontend bundle references `https://sharepoint-backend-g5vc.onrender.com` as its backend API base. Anonymous backend diagnostics are reachable, but authenticated API-backed feature flows still need validation because backend startup is degraded.
-
-The Vercel dashboard shows `zms-migration-suite`. The project was briefly connected to the wrong GitHub repository, `badugujashwanth-create/Cricket_chatbot_Backend`; that wrong connection has been removed.
-
-The correct GitHub repository for this working tree is `machander-byte/sharepoint_backend`, but it was not visible in the Vercel Git picker for the current Vercel account/installation. A production deployment was therefore performed with the Vercel CLI from `ZettalogixMigrationSuite/ZMS.WebUI`.
-
-Required Vercel Git target when access is granted:
-
-| Setting | Value |
-| --- | --- |
-| Repository | `machander-byte/sharepoint_backend` |
-| Branch | `master` |
-| Root directory | `ZettalogixMigrationSuite/ZMS.WebUI` |
-| Install command | `npm ci` |
-| Build command | `npm run build` |
-| Output directory | `dist` |
-
-## Latest Deployment Verification
+## Build Verification
 
 | Check | Result |
 | --- | --- |
-| `vercel pull --yes --environment=production` | Passed from `ZettalogixMigrationSuite/ZMS.WebUI` |
-| Production env presence | Required Vite env keys set as encrypted Vercel Production env values |
-| Remote production build | Passed |
-| Alias update | `https://zms-migration-suite.vercel.app` points to the latest production deployment |
-| Old source issue | Fixed for the aliased production frontend |
-| Supabase browser client issue | Fixed by switching the SPA client to `@supabase/supabase-js` |
-| Login stale/raw counters | Removed; clean login now shows neutral workspace/tutorial/API/safety cues |
-| Tutorial page | Added at `/v2/tutorial` behind the existing auth guard |
-| Browser page errors during latest V2 shell check | 0 page errors observed |
+| `npm run build` | Passed |
+| Remote Vercel `npm ci` | Passed |
+| Remote Vercel build | Passed |
+| Vite chunk warning | Present, accepted for demo |
+| npm audit | 6 findings: 5 moderate, 1 high |
 
-## Required Frontend Env
+## Browser Verification
+
+| Check | Result |
+| --- | --- |
+| `/login` | 200 OK; latest V2 login bundle |
+| Frontend bundle | Contains fingerprint `694069a` |
+| Frontend bundle | Contains Render backend URL |
+| Unauthenticated `/v2` | Redirects to `/login` |
+| Unauthenticated `/v2/tutorial` | Redirects to `/login` |
+| Unauthenticated `/v2/monitor` | Redirects to `/login` |
+| Authenticated `/v2` | Loaded and showed backend runtime `Healthy` |
+| Authenticated V2 pages | Loaded |
+| Browser console | 0 errors after final walkthrough |
+
+## Required Public Vite Values
 
 | Variable | Status |
 | --- | --- |
-| `VITE_API_BASE_URL` | Deployed bundle points to `https://sharepoint-backend-g5vc.onrender.com` |
-| `VITE_SUPABASE_URL` | SET in Vercel Production, value not printed |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | SET in Vercel Production, value not printed |
-| `VITE_GOOGLE_CLIENT_ID` | SET in Vercel Production, value not printed |
-| `VITE_GOOGLE_API_KEY` | SET in Vercel Production, value not printed |
-| `VITE_GOOGLE_APP_ID` | SET in Vercel Production, value not printed |
-| `VITE_GOOGLE_DRIVE_SCOPE` | SET to Drive readonly scope |
-| `VITE_APP_COMMIT` | SET to `1403fb2` |
-| `VITE_APP_BUILD_TIME` | SET in Vercel Production |
+| `VITE_API_BASE_URL` | SET to final Render backend URL for deployment |
+| `VITE_SUPABASE_URL` | SET |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | SET |
+| `VITE_GOOGLE_CLIENT_ID` | SET |
+| `VITE_GOOGLE_API_KEY` | SET |
+| `VITE_GOOGLE_APP_ID` | SET |
+| `VITE_GOOGLE_DRIVE_SCOPE` | SET |
+| `VITE_APP_COMMIT` | `694069a` |
+
+No backend secrets were added to Vercel by this pass.
 
 ## Decision
 
-Vercel old-source issue is fixed. The frontend is deployment-validated for the unauthenticated login route and protected-route redirects. Full authenticated UI V2 and API-backed validation remains blocked until a real Supabase browser session is available and the Render backend is no longer degraded.
+Vercel frontend is ready for final project / pre-production review.
