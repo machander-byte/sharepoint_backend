@@ -92,30 +92,30 @@ export default function AuthPage(): JSX.Element {
 
         <div className={styles.proofGrid}>
           <div>
-            <strong>231/231</strong>
-            <span>Stage 1 files passed</span>
+            <strong>Live</strong>
+            <span>Workspace after sign-in</span>
           </div>
           <div>
-            <strong>0</strong>
-            <span>Failed files</span>
+            <strong>Guide</strong>
+            <span>Step-by-step tutorial</span>
           </div>
           <div>
-            <strong>0</strong>
-            <span>Retries</span>
+            <strong>API</strong>
+            <span>Runtime diagnostics</span>
           </div>
           <div>
-            <strong>46/46</strong>
-            <span>Backend tests</span>
+            <strong>Safe</strong>
+            <span>Pilot-first workflow</span>
           </div>
         </div>
 
         <div className={styles.limitationNote}>
-          <strong>Known gap</strong>
-          <span>File migration integrity passed. Empty-folder preservation is a known gap.</span>
+          <strong>Live data</strong>
+          <span>Current records load only after sign-in and a healthy backend connection.</span>
         </div>
 
         <p className={styles.buildFingerprint} aria-label="ZMS frontend deployment fingerprint">
-          ZMS frontend build {buildCommit} · {buildTime}
+          ZMS frontend build {buildCommit} - {buildTime}
         </p>
       </section>
 
