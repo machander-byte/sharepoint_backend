@@ -16,7 +16,7 @@ Browser smoke for the deployed final project / pre-production demo:
 
 | Page / Flow | Result |
 | --- | --- |
-| `/login` | Passed; latest V2 design and fingerprint `694069a` |
+| `/login` | Passed; clean final demo login |
 | `/v2` unauthenticated | Redirects to `/login` |
 | `/v2/tutorial` unauthenticated | Redirects to `/login` |
 | `/v2/monitor` unauthenticated | Redirects to `/login` |

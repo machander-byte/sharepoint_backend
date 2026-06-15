@@ -20,7 +20,7 @@ ZMS is deployed as a final project / pre-production review demo.
 
 | Area | Result |
 | --- | --- |
-| Full repo latest commit | `adf7d71` |
+| Frontend deployment source commit | `adf7d71` |
 | Backend source latest commit | `669aba1` |
 | Render backend subtree commit | `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
 | Frontend UI polish commit | `adf7d71` |

@@ -134,8 +134,18 @@ Mark the product ready for company review only when:
 - Render backend reports `/api/status = 200 Healthy`.
 - Backend security headers are present on API responses.
 - Backend CORS preflight passed for `https://zms-migration-suite.vercel.app`.
-- Vercel final bundle contains the public Render backend URL and frontend fingerprint `694069a`.
+- Vercel final bundle contains the public Render backend URL.
 - Authenticated `/v2` browser walkthrough completed with 0 console errors.
 - No secret values were added to source, frontend code, docs, or reports in this pass.
 - Previously pasted credentials remain `ROTATE REQUIRED` before broader company submission.
 - Reviewer credentials must be shared separately and must not be written into Git, docs, screenshots, or chat transcripts.
+
+## 2026-06-15 UI Polish And Demo Addendum
+
+- Login page was cleaned for reviewer use and does not show passwords, tokens, backend URLs, or build/debug values.
+- Legacy reviewer routes `/migrations`, `/validation`, and `/copilot-readiness` were polished to remove raw concatenated labels.
+- Dashboard, Reports, AI, and Copilot pages no longer auto-probe unsupported optional latest-record endpoints on load.
+- Vercel final bundle contains the public Render backend URL and was deployed from frontend source commit `adf7d71`.
+- Authenticated reviewer walkthrough completed with 0 console errors and 0 failed network requests.
+- Demo screenshots were captured and committed under `docs/pre-production/screenshots`.
+- Demo video was not recorded because the connected Playwright browser session did not expose video recording.
