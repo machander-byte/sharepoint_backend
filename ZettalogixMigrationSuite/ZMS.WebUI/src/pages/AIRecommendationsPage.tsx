@@ -1,58 +1,16 @@
 import { ClipboardCheck, Sparkles, TimerReset } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PageHeader from "../components/PageHeader";
-import { zmsApi } from "../services/zmsApi";
 import { MigrationExecutionJob, MigrationReadinessAssessment, MigrationTransferPreview, PreMigrationValidationResult, WorkflowValidationRun } from "../types/zms";
 
-function formatEta(value: string): string {
-  const match = /^PT(?:(\d+)H)?(?:(\d+)M)?/i.exec(value);
-  if (!match) return value;
-
-  const hours = Number(match[1] ?? 0);
-  const minutes = Number(match[2] ?? 0);
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-}
-
 export default function AIRecommendationsPage(): JSX.Element {
-  const [assessment, setAssessment] = useState<MigrationReadinessAssessment | null>(null);
-  const [eta, setEta] = useState("Not estimated");
-  const [planAvailable, setPlanAvailable] = useState(false);
-  const [preValidation, setPreValidation] = useState<PreMigrationValidationResult | null>(null);
-  const [executionJob, setExecutionJob] = useState<MigrationExecutionJob | null>(null);
-  const [transferPreview, setTransferPreview] = useState<MigrationTransferPreview | null>(null);
-  const [workflow, setWorkflow] = useState<WorkflowValidationRun | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    zmsApi.getLatestReadinessAssessment().then((result) => {
-      if (!cancelled) setAssessment(result);
-    });
-    zmsApi.getLatestMigrationPlan().then((result) => {
-      if (!cancelled) setPlanAvailable(Boolean(result));
-    });
-    zmsApi.getLatestPreMigrationValidation().then((result) => {
-      if (!cancelled) setPreValidation(result);
-    });
-    zmsApi.getLatestMigrationExecutionJob().then((result) => {
-      if (!cancelled) setExecutionJob(result);
-    });
-    zmsApi.getLatestSharePointTransferPreview().then((result) => {
-      if (!cancelled) setTransferPreview(result);
-    });
-    zmsApi.getLatestWorkflowValidation().then((result) => {
-      if (!cancelled) setWorkflow(result);
-    });
-    zmsApi.getLatestDiscoveryResults().then(async (result) => {
-      if (cancelled || !result) return;
-      const nextEta = await zmsApi.getDiscoveryEtaEstimate(result.scanId);
-      if (!cancelled) setEta(formatEta(nextEta.estimatedDuration));
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const [assessment] = useState<MigrationReadinessAssessment | null>(null);
+  const [eta] = useState("Not estimated");
+  const [planAvailable] = useState(false);
+  const [preValidation] = useState<PreMigrationValidationResult | null>(null);
+  const [executionJob] = useState<MigrationExecutionJob | null>(null);
+  const [transferPreview] = useState<MigrationTransferPreview | null>(null);
+  const [workflow] = useState<WorkflowValidationRun | null>(null);
 
   return (
     <div className="flex flex-col gap-6">

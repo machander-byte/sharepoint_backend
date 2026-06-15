@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
-import { zmsApi } from "../services/zmsApi";
 
 interface CopilotReadiness {
   overallScore: number;
@@ -11,27 +9,12 @@ interface CopilotReadiness {
   recommendedActions: string[];
 }
 
+function getInitialCopilotReadiness(): CopilotReadiness | null {
+  return null;
+}
+
 export default function CopilotReadinessPage(): JSX.Element {
-  const [readiness, setReadiness] = useState<CopilotReadiness | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    zmsApi.getCopilotReadinessLatest()
-      .then((result) => {
-        if (!cancelled) setReadiness(result);
-      })
-      .catch((nextError: unknown) => setError(nextError instanceof Error ? nextError.message : "Copilot readiness could not be loaded."))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+  const readiness = getInitialCopilotReadiness();
   const emptyStateMessage = "Run discovery before Copilot readiness can be calculated.";
   const hasReadiness = Boolean(readiness);
 
@@ -43,12 +26,12 @@ export default function CopilotReadinessPage(): JSX.Element {
         <article className="rounded-xl border border-border bg-surface p-5 shadow-card">
           <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">Overall Score</p>
           <p className="mt-3 text-4xl font-bold text-primary">{readiness?.overallScore ?? 0}%</p>
-          <p className="mt-2 text-sm text-text-muted">{loading ? "Loading" : readiness?.riskTier ?? "No discovery data"}</p>
+          <p className="mt-2 text-sm text-text-muted">{readiness?.riskTier ?? "No discovery data"}</p>
         </article>
         <article className="rounded-xl border border-border bg-surface p-5 shadow-card lg:col-span-2">
           <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">Summary</p>
           <p className="mt-3 text-sm leading-6 text-text-primary">
-            {loading ? "Loading readiness data." : error ? "Live data unavailable. Showing a safe empty readiness state." : readiness?.summary ?? emptyStateMessage}
+            {readiness?.summary ?? emptyStateMessage}
           </p>
         </article>
       </section>

@@ -72,45 +72,20 @@ export default function ReportsPage(): JSX.Element {
   const [latestWorkflow, setLatestWorkflow] = useState<WorkflowValidationRun | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
     if (state.discovery.result) {
       setLatestDiscovery(state.discovery.result);
       return;
     }
 
-    zmsApi.getLatestDiscoveryResults().then((result) => {
-      if (!cancelled && result) {
-        setLatestDiscovery(result);
-      }
-    });
-    zmsApi.getLatestReadinessAssessment().then((result) => {
-      if (!cancelled && result) setLatestReadiness(result);
-    });
-    zmsApi.getLatestMigrationPlan().then((result) => {
-      if (!cancelled && result) setLatestPlan(result);
-    });
-    zmsApi.getLatestPreMigrationValidation().then((result) => {
-      if (!cancelled && result) setLatestPreValidation(result);
-    });
-    zmsApi.getLatestExecutionSimulation().then((result) => {
-      if (!cancelled && result) setLatestSimulation(result);
-    });
-    zmsApi.getLatestMigrationExecutionJob().then((result) => {
-      if (!cancelled && result) setLatestExecutionJob(result);
-    });
-    zmsApi.getLatestSharePointTransferPreview().then((result) => {
-      if (!cancelled && result) setLatestPreview(result);
-    });
-    zmsApi.getLatestLivePilotResult().then((result) => {
-      if (!cancelled && result) setLatestPilot(result);
-    });
-    zmsApi.getLatestWorkflowValidation().then((result) => {
-      if (!cancelled && result) setLatestWorkflow(result);
-    });
-
-    return () => {
-      cancelled = true;
-    };
+    setLatestDiscovery(null);
+    setLatestReadiness(null);
+    setLatestPlan(null);
+    setLatestPreValidation(null);
+    setLatestSimulation(null);
+    setLatestExecutionJob(null);
+    setLatestPreview(null);
+    setLatestPilot(null);
+    setLatestWorkflow(null);
   }, [state.discovery.result]);
 
   const exportReport = (report: ReportItem, format: ReportFormat) => {
