@@ -32,6 +32,9 @@ export default function CopilotReadinessPage(): JSX.Element {
     };
   }, []);
 
+  const emptyStateMessage = "Run discovery before Copilot readiness can be calculated.";
+  const hasReadiness = Boolean(readiness);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Copilot Readiness" subtitle="Governance, oversharing, stale content, and access-risk scoring from discovery data." />
@@ -45,18 +48,27 @@ export default function CopilotReadinessPage(): JSX.Element {
         <article className="rounded-xl border border-border bg-surface p-5 shadow-card lg:col-span-2">
           <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">Summary</p>
           <p className="mt-3 text-sm leading-6 text-text-primary">
-            {error ?? readiness?.summary ?? "Run discovery before Copilot readiness can be calculated."}
+            {loading ? "Loading readiness data." : error ? "Live data unavailable. Showing a safe empty readiness state." : readiness?.summary ?? emptyStateMessage}
           </p>
         </article>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {Object.entries(readiness?.categoryScores ?? {}).map(([category, score]) => (
-          <article key={category} className="rounded-xl border border-border bg-surface p-5 shadow-card">
-            <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">{category}</p>
-            <p className="mt-2 text-2xl font-bold text-text-primary">{score}%</p>
+        {hasReadiness ? (
+          Object.entries(readiness?.categoryScores ?? {}).map(([category, score]) => (
+            <article key={category} className="rounded-xl border border-border bg-surface p-5 shadow-card">
+              <p className="text-xs font-bold uppercase tracking-wide text-text-subtle">{category}</p>
+              <p className="mt-2 text-2xl font-bold text-text-primary">{score}%</p>
+            </article>
+          ))
+        ) : (
+          <article className="rounded-xl border border-border bg-surface-container p-5 shadow-card md:col-span-2 xl:col-span-4">
+            <p className="text-sm font-semibold text-text-primary">{emptyStateMessage}</p>
+            <p className="mt-2 text-sm leading-6 text-text-muted">
+              Discovery results are required before ZMS can calculate oversharing, stale content, access-risk, and governance readiness.
+            </p>
           </article>
-        ))}
+        )}
       </section>
 
       <section className="rounded-xl border border-border bg-surface p-5 shadow-card">
@@ -80,7 +92,7 @@ export default function CopilotReadinessPage(): JSX.Element {
                   <td className="py-3">{finding.recommendation}</td>
                 </tr>
               ))}
-              {!readiness ? <tr><td colSpan={4} className="py-4 text-text-muted">No readiness findings available.</td></tr> : null}
+              {!readiness ? <tr><td colSpan={4} className="py-6 text-center text-text-muted">{emptyStateMessage}</td></tr> : null}
             </tbody>
           </table>
         </div>
@@ -94,7 +106,7 @@ export default function CopilotReadinessPage(): JSX.Element {
               {action}
             </div>
           ))}
-          {!readiness ? <p className="text-sm text-text-muted">No recommended actions available.</p> : null}
+          {!readiness ? <p className="rounded-lg border border-border bg-surface-container p-4 text-sm text-text-muted">{emptyStateMessage}</p> : null}
         </div>
       </section>
     </div>

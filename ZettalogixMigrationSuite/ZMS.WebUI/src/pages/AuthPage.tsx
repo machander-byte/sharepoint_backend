@@ -11,12 +11,9 @@ interface LocationState {
   };
 }
 
-const providerLabels: Array<{ provider: Provider; icon: string; label: string }> = [
-  { provider: "google", icon: "account_circle", label: "Continue with Google" }
+const providerLabels: Array<{ provider: Provider; label: string }> = [
+  { provider: "google", label: "Continue with Google" }
 ];
-
-const buildCommit = import.meta.env.VITE_APP_COMMIT?.trim() || "local";
-const buildTime = import.meta.env.VITE_APP_BUILD_TIME?.trim() || "local";
 
 export default function AuthPage(): JSX.Element {
   const location = useLocation();
@@ -72,7 +69,7 @@ export default function AuthPage(): JSX.Element {
 
   return (
     <main className={styles.authShell}>
-      <section className={styles.authHero} aria-label="ZMS validation summary">
+      <section className={styles.authHero} aria-label="ZMS sign-in summary">
         <div className={styles.heroBrand}>
           <div className={styles.brandMark}>Z</div>
           <div>
@@ -82,41 +79,18 @@ export default function AuthPage(): JSX.Element {
         </div>
 
         <div>
-          <span className={styles.heroEyebrow}>UI V2 access</span>
-          <h1>Migration control plane</h1>
+          <span className={styles.heroEyebrow}>Final Demo / Pre-Production Release</span>
+          <h1>ZMS reviewer workspace</h1>
           <p>
-            Sign in to review migration evidence, readiness, reports, governance, AI recommendations,
-            and internal safety limits.
+            Sign in to review the migration dashboard, validation evidence, reports, governance,
+            AI advisor, and guided tutorial in the authenticated workspace.
           </p>
         </div>
 
-        <div className={styles.proofGrid}>
-          <div>
-            <strong>Live</strong>
-            <span>Workspace after sign-in</span>
-          </div>
-          <div>
-            <strong>Guide</strong>
-            <span>Step-by-step tutorial</span>
-          </div>
-          <div>
-            <strong>API</strong>
-            <span>Runtime diagnostics</span>
-          </div>
-          <div>
-            <strong>Safe</strong>
-            <span>Pilot-first workflow</span>
-          </div>
-        </div>
-
         <div className={styles.limitationNote}>
-          <strong>Live data</strong>
-          <span>Current records load only after sign-in and a healthy backend connection.</span>
+          <strong>Reviewer note</strong>
+          <span>Authenticated pages use live backend status and clearly labeled empty states when no run data exists.</span>
         </div>
-
-        <p className={styles.buildFingerprint} aria-label="ZMS frontend deployment fingerprint">
-          ZMS frontend build {buildCommit} - {buildTime}
-        </p>
       </section>
 
       <section className={styles.authPanel}>
@@ -133,7 +107,6 @@ export default function AuthPage(): JSX.Element {
               onClick={() => void beginOAuth(item.provider)}
               disabled={Boolean(pendingProvider)}
             >
-              <span className="material-symbols-outlined">{item.icon}</span>
               {pendingProvider === item.provider ? "Redirecting..." : item.label}
             </button>
           ))}
@@ -155,7 +128,6 @@ export default function AuthPage(): JSX.Element {
             />
           </label>
           <button type="submit" className={styles.emailButton} disabled={pendingEmail || Boolean(pendingProvider)}>
-            <span className="material-symbols-outlined">mail</span>
             {pendingEmail ? "Sending link..." : "Send sign-in link"}
           </button>
         </form>

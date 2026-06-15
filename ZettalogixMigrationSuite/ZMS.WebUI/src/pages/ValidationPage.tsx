@@ -2,6 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
 import { MigrationJob, ValidationFindingRecord, ValidationItemRecord, ValidationRunRecord } from "../utils/models";
 
+const emptyValidationMessage = "No validation run has been recorded yet. Start a migration validation to compare source and target items.";
+
+function formatReadableLabel(value?: string | null): string {
+  const normalized = value?.trim();
+  if (!normalized) return "-";
+
+  return normalized
+    .replace(/_/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export default function ValidationPage(): JSX.Element {
   const [jobs, setJobs] = useState<MigrationJob[]>([]);
   const [selectedJobId, setSelectedJobId] = useState("");
@@ -94,9 +107,13 @@ export default function ValidationPage(): JSX.Element {
           </div>
           <div className="action-group">
             <select value={selectedJobId} onChange={(event) => setSelectedJobId(event.target.value)}>
-              {jobs.map((job) => (
-                <option key={job.id} value={job.id}>{job.name}</option>
-              ))}
+              {jobs.length === 0 ? (
+                <option value="">No migration jobs</option>
+              ) : (
+                jobs.map((job) => (
+                  <option key={job.id} value={job.id}>{job.name}</option>
+                ))
+              )}
             </select>
             <button type="button" className="primary-button" onClick={() => void startValidation()} disabled={!selectedJobId || loading}>
               {loading ? "Running" : "Start validation"}
@@ -109,18 +126,23 @@ export default function ValidationPage(): JSX.Element {
         <div className="meta-grid">
           <div className="metric-box">
             <span>Status</span>
-            <strong>{run?.status ?? "NOT_STARTED"}</strong>
+            <strong>{run ? formatReadableLabel(run.status) : "Not started"}</strong>
             <p>{selectedJob?.name ?? "No migration job selected"}</p>
           </div>
           <div className="metric-box">
             <span>Passed</span>
             <strong>{run?.passedCount ?? 0}</strong>
-            <p>{run?.summary ?? "No validation run has been recorded."}</p>
+            <p>{run?.summary ?? emptyValidationMessage}</p>
           </div>
           <div className="metric-box">
-            <span>Warnings / failed</span>
-            <strong>{(run?.warningCount ?? 0) + (run?.failedCount ?? 0)}</strong>
+            <span>Warnings</span>
+            <strong>{run?.warningCount ?? 0}</strong>
             <p>{findings.length} finding records available.</p>
+          </div>
+          <div className="metric-box">
+            <span>Failed</span>
+            <strong>{run?.failedCount ?? 0}</strong>
+            <p>Items requiring operator review after validation.</p>
           </div>
         </div>
       </article>
@@ -163,11 +185,11 @@ export default function ValidationPage(): JSX.Element {
             </thead>
             <tbody>
               {findings.length === 0 ? (
-                <tr><td colSpan={5}>No validation findings available.</td></tr>
+                <tr><td colSpan={5} className="table-empty">{emptyValidationMessage}</td></tr>
               ) : findings.map((finding) => (
                 <tr key={finding.id}>
-                  <td>{finding.severity}</td>
-                  <td>{finding.category}</td>
+                  <td>{formatReadableLabel(finding.severity)}</td>
+                  <td>{formatReadableLabel(finding.category)}</td>
                   <td>{finding.sourcePath}</td>
                   <td>{finding.targetPath || "-"}</td>
                   <td>{finding.recommendedAction}</td>
@@ -197,16 +219,19 @@ export default function ValidationPage(): JSX.Element {
               </tr>
             </thead>
             <tbody>
-              {items.slice(0, 50).map((item) => (
-                <tr key={item.id}>
-                  <td>{item.status}</td>
-                  <td>{item.differenceType || "-"}</td>
-                  <td>{item.sourcePath}</td>
-                  <td>{item.targetPath || "-"}</td>
-                  <td>{item.message}</td>
-                </tr>
-              ))}
-              {items.length === 0 ? <tr><td colSpan={5}>No validation items available.</td></tr> : null}
+              {items.length === 0 ? (
+                <tr><td colSpan={5} className="table-empty">{emptyValidationMessage}</td></tr>
+              ) : (
+                items.slice(0, 50).map((item) => (
+                  <tr key={item.id}>
+                    <td>{formatReadableLabel(item.status)}</td>
+                    <td>{formatReadableLabel(item.differenceType)}</td>
+                    <td>{item.sourcePath}</td>
+                    <td>{item.targetPath || "-"}</td>
+                    <td>{item.message}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

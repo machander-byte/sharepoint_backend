@@ -36,7 +36,13 @@ export default function MigrationsPage(): JSX.Element {
     <>
       <section className="split-panel">
         <article className="surface-card">
-          <span className="eyebrow">Queue Metrics</span>
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">Queue Metrics</span>
+              <h2>Live migrations</h2>
+              <p>Track execution state, operator interventions, and safe report exports for migration runs.</p>
+            </div>
+          </div>
           <div className="meta-grid">
             <div className="metric-box">
               <span>Total jobs</span>
@@ -53,6 +59,11 @@ export default function MigrationsPage(): JSX.Element {
               <strong>{pausedJobs.length + failedJobs.length}</strong>
               <p>Jobs requiring operator attention before the next processing wave.</p>
             </div>
+            <div className="metric-box">
+              <span>Failed jobs</span>
+              <strong>{failedJobs.length}</strong>
+              <p>Runs that require review before retry or restart.</p>
+            </div>
           </div>
         </article>
 
@@ -65,17 +76,10 @@ export default function MigrationsPage(): JSX.Element {
             </div>
           </div>
           <div className="page-stack">
-            <div className="metric-box">
-              <span>Failed jobs</span>
-              <strong>{failedJobs.length}</strong>
-              <p>Use the detail view to inspect log entries and decide whether to resume, retry, or reconfigure.</p>
-            </div>
             <button type="button" className="primary-button" onClick={() => setWizardOpen(true)}>
-              <span className="material-symbols-outlined">add</span>
               New migration
             </button>
             <button type="button" className="ghost-button" onClick={() => void api.downloadReport("/jobs.csv")}>
-              <span className="material-symbols-outlined">download</span>
               Download all runs
             </button>
           </div>

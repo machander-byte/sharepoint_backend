@@ -41,7 +41,7 @@
   margin-top: 2px;
   color: #e7edf4;
   font-size: 18px;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .brandMark {
@@ -50,7 +50,7 @@
   display: grid;
   place-items: center;
   border: 1px solid rgba(142, 213, 255, 0.34);
-  border-radius: 14px;
+  border-radius: 8px;
   background: linear-gradient(135deg, rgba(142, 213, 255, 0.24), rgba(56, 189, 248, 0.9));
   color: #06121b;
   box-shadow: 0 0 30px rgba(56, 189, 248, 0.24);
@@ -64,7 +64,7 @@
   color: #f6f9fc;
   font-size: clamp(42px, 6vw, 70px);
   line-height: 0.98;
-  letter-spacing: -0.045em;
+  letter-spacing: 0;
 }
 
 .authHero p,
@@ -75,13 +75,6 @@
   line-height: 1.6;
 }
 
-.proofGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.proofGrid div,
 .limitationNote,
 .authPanel,
 .statusPanel {
@@ -89,28 +82,6 @@
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(16px);
-}
-
-.proofGrid div {
-  min-width: 0;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.proofGrid strong {
-  display: block;
-  color: #20c997;
-  font-size: 25px;
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
-.proofGrid span {
-  display: block;
-  margin-top: 8px;
-  color: #9dafbf;
-  font-size: 12px;
-  font-weight: 700;
 }
 
 .limitationNote {
@@ -150,7 +121,7 @@
 .statusPanel {
   width: min(460px, calc(100vw - 32px));
   min-width: 0;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 32px;
 }
 
@@ -177,7 +148,7 @@
   color: #f6f9fc;
   font-size: 30px;
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 
@@ -311,13 +282,9 @@
     font-size: 42px;
   }
 
-  .proofGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .authPanel,
   .statusPanel {
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 24px 20px;
   }
 

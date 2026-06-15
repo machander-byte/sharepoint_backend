@@ -17,7 +17,7 @@ interface JobTableProps {
 
 export default function JobTable({ jobs, onStart, onPause, onResume, onCancel, onRetry }: JobTableProps): JSX.Element {
   if (jobs.length === 0) {
-    return <EmptyState title="No migration jobs yet" description="Create a job to see it appear in the execution table." />;
+    return <EmptyState title="No migration jobs yet." description="Create a job or run a simulation to see execution details here." />;
   }
 
   return (
