@@ -1,6 +1,6 @@
 # ZMS Security Hardening Report
 
-Status date: 2026-06-14
+Status date: 2026-06-15
 
 ## Completed
 
@@ -18,6 +18,8 @@ Status date: 2026-06-14
 - API CORS allows the final Vercel origin.
 - Lightweight API rate limiting is enabled.
 - Frontend V2 avoids showing mock records as live data.
+- Login page no longer shows build/debug fingerprint text or demo-like metric badges.
+- Legacy reviewer pages now use clean empty states instead of raw labels or unlabeled fallback data.
 
 ## Final Security Results
 
@@ -32,6 +34,8 @@ Status date: 2026-06-14
 | Auth guard for `/v2` | Passed |
 | Unauthenticated `/v2` | Redirects to `/login` |
 | Security headers | Present on backend endpoints |
+| Secrets shown on login page | Not found |
+| Secrets shown in demo screenshots | Not found |
 
 ## Rotate Required
 

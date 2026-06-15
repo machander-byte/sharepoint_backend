@@ -1,6 +1,6 @@
 # ZMS Release Readiness Summary
 
-Status date: 2026-06-14
+Status date: 2026-06-15
 
 ## Decision
 
@@ -20,10 +20,14 @@ Ready for final project review as a pre-production demo.
 | `/api/status` | 200 Healthy |
 | Login | Passed with Google/Supabase browser flow |
 | Authenticated `/v2` | Passed |
+| Legacy `/migrations`, `/validation`, `/copilot-readiness` polish | Passed |
 | No CORS errors | Passed |
-| No browser console errors in V2 walkthrough | Passed |
+| No browser console errors in reviewer walkthrough | Passed |
 | Backend build/tests | Passed |
 | Frontend build | Passed |
+| Demo screenshots | Captured |
+| Demo script | Created |
+| Demo video | Not recorded; browser session video capture unavailable |
 
 ## Not Claimed
 

@@ -1,6 +1,6 @@
 # ZMS Deployment Validation Report
 
-Status date: 2026-06-14
+Status date: 2026-06-15
 
 ## Summary
 
@@ -11,16 +11,17 @@ The deployed ZMS final project / pre-production demo is now reachable and health
 - Public frontend alias points to the latest Vercel deployment.
 - Supabase/Google login was verified in the browser.
 - Authenticated V2 reviewer pages loaded with 0 browser console errors.
+- Raw legacy reviewer routes were polished and verified with 0 browser console errors.
 
 ## Deployment Results
 
 | Item | Result |
 | --- | --- |
 | Full repo branch | `master` pushed |
-| Full repo latest commit | `694069a` |
+| Full repo latest commit | `adf7d71` |
 | Backend source latest commit | `669aba1` |
 | Render backend subtree commit | `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
-| Frontend fingerprint | `694069a` |
+| Frontend UI polish commit | `adf7d71` |
 | Render backend URL | `https://sharepoint-backend-g5vc.onrender.com` |
 | Vercel frontend URL | `https://zms-migration-suite.vercel.app` |
 | Vercel source folder | `ZettalogixMigrationSuite/ZMS.WebUI` |
@@ -41,15 +42,27 @@ The deployed ZMS final project / pre-production demo is now reachable and health
 
 | Check | Result |
 | --- | --- |
-| `/login` | 200 OK, latest bundle fingerprint `694069a` |
+| `/login` | 200 OK, clean reviewer login |
 | `/v2` unauthenticated | Redirects to `/login` |
 | `/v2/tutorial` unauthenticated | Redirects to `/login` |
 | `/v2/monitor` unauthenticated | Redirects to `/login` |
 | Login | Passed with Google/Supabase browser flow |
 | Authenticated `/v2` | Loaded and showed runtime `Healthy` |
 | V2 pages | Passed walkthrough |
+| Legacy `/migrations` | Passed; queue metric cards and clean empty state |
+| Legacy `/validation` | Passed; summary cards and styled tables |
+| Legacy `/copilot-readiness` | Passed; clean discovery-required empty state |
 | Browser console | 0 errors after final walkthrough |
 | CORS | Passed for final Vercel origin |
+
+## Demo Walkthrough Artifacts
+
+| Artifact | Result |
+| --- | --- |
+| Reviewer walkthrough | Passed |
+| Demo video | Not recorded; current Playwright session has no video recorder |
+| Demo script | `docs/pre-production/ZMS_DEMO_VIDEO_SCRIPT.md` |
+| Screenshots | Captured and indexed in `docs/pre-production/ZMS_DEMO_SCREENSHOTS_INDEX.md` |
 
 ## V2 Pages Tested
 

@@ -1,6 +1,6 @@
 # ZMS Test Report
 
-Generated: 2026-06-14
+Generated: 2026-06-15
 
 ## Final Demo Summary
 
@@ -13,17 +13,18 @@ ZMS is deployed as a final project / pre-production review demo.
 - Vercel frontend is live at `https://zms-migration-suite.vercel.app`.
 - Supabase/Google login was verified in the browser.
 - Authenticated `/v2` and the requested V2 pages loaded with no browser console errors.
+- Legacy reviewer routes `/migrations`, `/validation`, `/reports`, `/ai`, and `/copilot-readiness` loaded with no raw concatenated labels.
 - CORS preflight from `https://zms-migration-suite.vercel.app` to the Render backend passed.
 
 ## Deployed Versions
 
 | Area | Result |
 | --- | --- |
-| Full repo latest commit | `694069a` |
+| Full repo latest commit | `adf7d71` |
 | Backend source latest commit | `669aba1` |
 | Render backend subtree commit | `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
-| Frontend build fingerprint | `694069a` |
-| Frontend JS asset | `index-B9Vkb8MT.js` |
+| Frontend UI polish commit | `adf7d71` |
+| Frontend JS asset | `index-C-DJmnwO.js` |
 
 ## Final Backend Endpoint Results
 
@@ -37,7 +38,7 @@ ZMS is deployed as a final project / pre-production review demo.
 
 | Check | Result |
 | --- | --- |
-| `/login` | 200 OK; latest V2 login bundle contains fingerprint `694069a` |
+| `/login` | 200 OK; clean reviewer login loaded |
 | Unauthenticated `/v2` | Redirects to `/login` |
 | Unauthenticated `/v2/tutorial` | Redirects to `/login` |
 | Unauthenticated `/v2/monitor` | Redirects to `/login` |
@@ -45,6 +46,17 @@ ZMS is deployed as a final project / pre-production review demo.
 | Authenticated `/v2` | Loaded and showed backend runtime `Healthy` |
 | Browser console | 0 errors after final V2 walkthrough |
 | CORS | Passed for final frontend origin |
+
+## Legacy Reviewer Routes Tested
+
+- `/dashboard`
+- `/migrations`
+- `/validation`
+- `/reports`
+- `/ai`
+- `/copilot-readiness`
+
+All listed legacy reviewer routes loaded in the authenticated browser pass with 0 console errors, 0 failed network requests, and no raw concatenated labels such as `StatusNOT_STARTED`, `Passed0`, or `addNew migration`.
 
 ## V2 Pages Tested
 
@@ -74,8 +86,14 @@ dotnet test .\Zettalogix.MigrationSuite.sln --no-build
 
 Set-Location "d:\projects\Shearpoint to google\ZettalogixMigrationSuite\ZMS.WebUI"
 npm run build
-npx vercel deploy --prod --yes -b VITE_API_BASE_URL=https://sharepoint-backend-g5vc.onrender.com -b VITE_APP_COMMIT=694069a
+npx vercel deploy --prod --yes -b VITE_API_BASE_URL=https://sharepoint-backend-g5vc.onrender.com -b VITE_APP_COMMIT=adf7d71
 ```
+
+## Demo Artifacts
+
+- Demo video recorded: No. The connected Playwright browser session did not expose video recording.
+- Demo script created: `docs/pre-production/ZMS_DEMO_VIDEO_SCRIPT.md`.
+- Demo screenshots captured: Yes, indexed in `docs/pre-production/ZMS_DEMO_SCREENSHOTS_INDEX.md`.
 
 ## Known Warnings
 

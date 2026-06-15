@@ -1,6 +1,6 @@
 # ZMS Final Project Submission
 
-Status date: 2026-06-14
+Status date: 2026-06-15
 
 ## Project Name
 
@@ -20,6 +20,7 @@ https://sharepoint-backend-g5vc.onrender.com
 2. Log in with the provided reviewer account or Google/Supabase account shared separately.
 3. Open `/v2`.
 4. Review Command Center, Monitor, Validate, Reports, AI Advisor, Governance, and Tutorial.
+5. Legacy reviewer routes `/migrations`, `/validation`, and `/copilot-readiness` are also polished for direct review.
 
 Do not place passwords in Git, docs, screenshots, or chat transcripts. Share reviewer credentials separately.
 
@@ -37,11 +38,18 @@ Do not place passwords in Git, docs, screenshots, or chat transcripts. Share rev
 | Backend tests | Passed, 46/46 |
 | Frontend build | Passed |
 | Render deployed | Passed, commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
-| Vercel deployed | Passed, fingerprint `694069a` |
+| Vercel deployed | Passed, UI polish commit `adf7d71` |
 | Login | Passed with Google/Supabase browser flow |
 | Authenticated `/v2` | Passed |
+| Authenticated legacy reviewer routes | Passed |
 | CORS | Passed for final frontend origin |
-| Browser console | 0 errors after final V2 walkthrough |
+| Browser console | 0 errors after final reviewer walkthrough |
+
+## Demo Artifacts
+
+- Demo video recorded: No. The current Playwright browser session did not expose video recording.
+- Demo script: `docs/pre-production/ZMS_DEMO_VIDEO_SCRIPT.md`.
+- Demo screenshots: `docs/pre-production/ZMS_DEMO_SCREENSHOTS_INDEX.md`.
 
 ## Migration Proof
 
