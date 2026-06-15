@@ -34,10 +34,11 @@ const pageIcons = {
 
 interface V2SidebarProps {
   activePage: V2PageId;
+  tourTargetPage?: V2PageId | null;
   onNavigate: (page: V2PageId) => void;
 }
 
-export function V2Sidebar({ activePage, onNavigate }: V2SidebarProps): JSX.Element {
+export function V2Sidebar({ activePage, tourTargetPage, onNavigate }: V2SidebarProps): JSX.Element {
   const groups = ["Operate", "Prepare", "Assure"] as const;
 
   return (
@@ -53,9 +54,11 @@ export function V2Sidebar({ activePage, onNavigate }: V2SidebarProps): JSX.Eleme
           {v2Pages.filter((page) => page.group === group).map((page) => {
             const Icon = pageIcons[page.id];
             const active = activePage === page.id;
+            const tourTarget = tourTargetPage === page.id;
             return (
               <button
-                className={`zms-v2-nav-button${active ? " is-active" : ""}`}
+                className={`zms-v2-nav-button${active ? " is-active" : ""}${tourTarget ? " is-tour-target" : ""}`}
+                data-tour-page={page.id}
                 key={page.id}
                 type="button"
                 onClick={() => onNavigate(page.id)}

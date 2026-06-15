@@ -2,13 +2,22 @@ import { KeyRound, Settings2, ShieldCheck, Users } from "lucide-react";
 import { internalSafetyLimits, migrationEvidence } from "../data/v2DashboardData";
 import { V2Card, V2EvidenceRow, V2PageHeader, V2StatusPill } from "../components/V2Primitives";
 
-export function V2Settings(): JSX.Element {
+interface V2SettingsProps {
+  onRestartTour: () => void;
+}
+
+export function V2Settings({ onRestartTour }: V2SettingsProps): JSX.Element {
   return (
     <>
       <V2PageHeader
         eyebrow="Settings"
         title="Environment and safety settings"
         description="Settings preview for backend-only secrets, RBAC posture, internal safety limits, and integration boundaries."
+        actions={(
+          <button type="button" className="zms-v2-action" onClick={onRestartTour}>
+            Restart guided tour
+          </button>
+        )}
       />
 
       <div className="zms-v2-grid">
@@ -42,13 +51,25 @@ export function V2Settings(): JSX.Element {
           </div>
         </V2Card>
 
-        <V2Card title="Current validation status" className="zms-v2-span-6">
+        <V2Card title="Guided onboarding" className="zms-v2-span-4">
+          <ShieldCheck size={28} color="var(--v2-success)" />
+          <p className="zms-v2-copy">
+            Restart the UI-only tour at any time. It changes only browser navigation and local onboarding state; it does not run migrations or update backend data.
+          </p>
+          <div style={{ marginTop: 16 }}>
+            <button type="button" className="zms-v2-action" onClick={onRestartTour}>
+              Restart guided tour
+            </button>
+          </div>
+        </V2Card>
+
+        <V2Card title="Current validation status" className="zms-v2-span-4">
           <V2EvidenceRow label="Backend tests" value={migrationEvidence.backendTests} tone="success" />
           <V2EvidenceRow label="Frontend build" value={migrationEvidence.frontendBuild} tone="success" />
           <V2EvidenceRow label="Supabase" value={migrationEvidence.supabase} tone="success" />
         </V2Card>
 
-        <V2Card title="Internal safety limits" className="zms-v2-span-6">
+        <V2Card title="Internal safety limits" className="zms-v2-span-8">
           <ul className="zms-v2-list">
             {internalSafetyLimits.map((limit) => (
               <li key={limit}><ShieldCheck size={15} color="var(--v2-success)" /> {limit}</li>
