@@ -49,7 +49,7 @@ Previously pasted credentials remain `ROTATE REQUIRED` before broader company su
 
 ## Remaining Production Hardening
 
-- Resolve or explicitly accept the 6 Vercel/npm audit findings.
+- Redeploy the frontend with the updated lockfile after the 2026-06-18 npm audit cleanup.
 - Rotate all previously exposed credentials before external company sharing.
 - Add a repeatable authenticated E2E suite.
 - Certify larger scale migrations before production claims.

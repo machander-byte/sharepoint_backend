@@ -27,7 +27,7 @@ Frontend deployment target for `ZettalogixMigrationSuite/ZMS.WebUI`.
 | Remote Vercel `npm ci` | Passed |
 | Remote Vercel build | Passed |
 | Vite chunk warning | Present, accepted for demo |
-| npm audit | 6 findings: 5 moderate, 1 high |
+| npm audit | Previously had Vite/esbuild findings; resolved locally on 2026-06-18, redeploy updated lockfile |
 
 ## Browser Verification
 
