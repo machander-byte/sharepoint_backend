@@ -21,6 +21,13 @@ public interface ISourceConnector
         string? libraryName,
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyCollection<FolderItem>> GetFoldersAsync(
+        ConnectionProfile connection,
+        string sourceLocation,
+        string? libraryName,
+        CancellationToken cancellationToken)
+        => Task.FromResult<IReadOnlyCollection<FolderItem>>(Array.Empty<FolderItem>());
+
     Task<Stream> OpenReadAsync(
         ConnectionProfile connection,
         MigrationItem item,

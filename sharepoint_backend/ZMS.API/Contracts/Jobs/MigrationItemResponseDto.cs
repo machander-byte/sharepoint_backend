@@ -1,4 +1,5 @@
 using ZMS.Core.Enums;
+using ZMS.Core.Models;
 
 namespace ZMS.API.Contracts.Jobs;
 
@@ -7,6 +8,7 @@ public class MigrationItemResponseDto
     public Guid Id { get; set; }
     public Guid JobId { get; set; }
     public string FileName { get; set; } = string.Empty;
+    public string ItemType { get; set; } = MigrationItemMetadataKeys.ItemTypeFile;
     public string SourcePath { get; set; } = string.Empty;
     public string? TargetPath { get; set; }
     public long FileSizeInBytes { get; set; }

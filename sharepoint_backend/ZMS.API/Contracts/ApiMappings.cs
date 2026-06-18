@@ -129,6 +129,7 @@ public static class ApiMappings
             Id = item.Id,
             JobId = item.JobId,
             FileName = item.FileName,
+            ItemType = item.IsFolder ? MigrationItemMetadataKeys.ItemTypeFolder : MigrationItemMetadataKeys.ItemTypeFile,
             SourcePath = item.SourcePath,
             TargetPath = item.TargetPath,
             FileSizeInBytes = item.FileSizeInBytes,

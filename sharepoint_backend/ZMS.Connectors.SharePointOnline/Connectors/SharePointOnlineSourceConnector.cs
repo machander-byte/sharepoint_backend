@@ -10,7 +10,6 @@ public class SharePointOnlineSourceConnector : ISourceConnector
     private const string SharePointDriveIdKey = "SharePointDriveId";
     private const string SharePointDriveItemIdKey = "SharePointDriveItemId";
     private const string SharePointLibraryNameKey = "SharePointLibraryName";
-    private const string RelativePathKey = "RelativePath";
 
     private readonly SharePointGraphClient _graphClient;
 
@@ -93,7 +92,8 @@ public class SharePointOnlineSourceConnector : ISourceConnector
                     ModifiedUtc = file.ModifiedUtc,
                     Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
-                        [RelativePathKey] = relativePath,
+                        [MigrationItemMetadataKeys.RelativePath] = relativePath,
+                        [MigrationItemMetadataKeys.ItemType] = MigrationItemMetadataKeys.ItemTypeFile,
                         [SharePointDriveIdKey] = file.DriveId,
                         [SharePointDriveItemIdKey] = file.DriveItemId,
                         [SharePointLibraryNameKey] = file.LibraryName
@@ -103,6 +103,52 @@ public class SharePointOnlineSourceConnector : ISourceConnector
         }
 
         return files.OrderBy(file => file.SourcePath).ToArray();
+    }
+
+    public async Task<IReadOnlyCollection<FolderItem>> GetFoldersAsync(
+        ConnectionProfile connection,
+        string sourceLocation,
+        string? libraryName,
+        CancellationToken cancellationToken)
+    {
+        var siteUrl = ResolveSiteUrl(connection, sourceLocation);
+        var libraryNames = await ResolveLibraryNamesAsync(connection, siteUrl, libraryName, cancellationToken);
+        var folders = new List<FolderItem>();
+
+        foreach (var resolvedLibraryName in libraryNames)
+        {
+            var libraryFolders = await _graphClient.ListDriveFoldersAsync(
+                connection,
+                siteUrl,
+                resolvedLibraryName,
+                null,
+                cancellationToken);
+
+            foreach (var folder in libraryFolders)
+            {
+                var relativePath = libraryNames.Count > 1
+                    ? CombinePath(folder.LibraryName, folder.RelativePath)
+                    : folder.RelativePath;
+
+                folders.Add(new FolderItem
+                {
+                    Name = folder.Name,
+                    SourcePath = folder.WebUrl ?? CombinePath(siteUrl.TrimEnd('/'), relativePath),
+                    RelativePath = relativePath,
+                    ModifiedUtc = folder.ModifiedUtc,
+                    Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [MigrationItemMetadataKeys.RelativePath] = relativePath,
+                        [MigrationItemMetadataKeys.ItemType] = MigrationItemMetadataKeys.ItemTypeFolder,
+                        [SharePointDriveIdKey] = folder.DriveId,
+                        [SharePointDriveItemIdKey] = folder.DriveItemId,
+                        [SharePointLibraryNameKey] = folder.LibraryName
+                    }
+                });
+            }
+        }
+
+        return folders.OrderBy(folder => folder.RelativePath).ToArray();
     }
 
     public async Task<Stream> OpenReadAsync(

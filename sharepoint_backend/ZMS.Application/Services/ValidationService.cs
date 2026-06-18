@@ -201,6 +201,22 @@ public class ValidationService : IValidationService
             };
         }
 
+        if (item.IsFolder)
+        {
+            return new ValidationItemResult
+            {
+                ValidationRunId = validationRunId,
+                MigrationItemId = item.Id,
+                SourcePath = item.SourcePath,
+                TargetPath = item.TargetPath,
+                SourceSizeBytes = 0,
+                TargetSizeBytes = 0,
+                Status = "PASSED",
+                DifferenceType = "None",
+                Message = "Folder path was preserved on the target."
+            };
+        }
+
         return new ValidationItemResult
         {
             ValidationRunId = validationRunId,

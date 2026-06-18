@@ -23,7 +23,8 @@ public class MigrationItemRepository : IMigrationItemRepository
             .ToListAsync(cancellationToken);
 
         return items
-            .OrderBy(item => item.CreatedUtc)
+            .OrderBy(item => item.IsFolder ? 0 : 1)
+            .ThenBy(item => item.CreatedUtc)
             .ToArray();
     }
 
@@ -39,7 +40,8 @@ public class MigrationItemRepository : IMigrationItemRepository
             .ToListAsync(cancellationToken);
 
         return items
-            .OrderBy(item => item.CreatedUtc)
+            .OrderBy(item => item.IsFolder ? 0 : 1)
+            .ThenBy(item => item.CreatedUtc)
             .Take(batchSize)
             .ToArray();
     }
