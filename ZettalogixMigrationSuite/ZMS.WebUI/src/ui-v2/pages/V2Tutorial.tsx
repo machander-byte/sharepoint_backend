@@ -52,7 +52,7 @@ const workflowSteps = [
 ];
 
 const limitations = [
-  "Empty-folder preservation is not fully certified.",
+  "Empty-folder preservation is implemented and test-covered; live certification is pending backend redeploy.",
   "1,000-file migration is pending.",
   "Subscription is not implemented.",
   "Additional connectors are roadmap."

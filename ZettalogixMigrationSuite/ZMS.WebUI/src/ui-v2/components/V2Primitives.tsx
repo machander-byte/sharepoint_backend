@@ -74,7 +74,7 @@ export function V2StatusPill({ children, tone = "neutral" }: V2StatusPillProps):
 export function V2LimitationBanner(): JSX.Element {
   return (
     <div className="zms-v2-limitation">
-      <strong>Known product gap:</strong> {migrationEvidence.limitation}
+      <strong>Implementation status:</strong> {migrationEvidence.limitation}
     </div>
   );
 }

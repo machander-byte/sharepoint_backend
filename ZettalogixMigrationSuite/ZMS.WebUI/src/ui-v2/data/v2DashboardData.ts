@@ -60,7 +60,7 @@ export const migrationEvidence = {
   queue: "Empty",
   supabase: "Connected during live validation",
   limitation:
-    "File migration integrity passed. Empty folders are not yet migrated as first-class objects."
+    "File migration integrity passed. Empty-folder preservation is implemented and test-covered; live certification is pending backend redeploy."
 };
 
 export const commandMetrics = [
