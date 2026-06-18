@@ -1,6 +1,6 @@
 # ZMS Demo Video Script
 
-Status date: 2026-06-15
+Status date: 2026-06-18
 
 ## Recording Status
 
@@ -38,7 +38,7 @@ Screenshots were captured instead and indexed in `docs/pre-production/ZMS_DEMO_S
    "The tutorial gives reviewers a guided path through the demo without requiring destructive actions."
 
 10. Mention backend health.
-    "Backend `/api/version`, `/api/health`, and `/api/status` are all returning 200, and status is Healthy."
+    "Backend `/api/version`, `/api/health`, and `/api/status` are all returning 200, and status is Healthy. The latest backend empty-folder code is pushed but still needs the Render redeploy before live certification."
 
 ## Reviewer Instructions
 
@@ -50,7 +50,7 @@ Screenshots were captured instead and indexed in `docs/pre-production/ZMS_DEMO_S
 
 ## Known Limitations To Mention
 
-- Empty-folder preservation is not complete.
+- Empty-folder preservation is implemented and test-covered, but live certification is pending Render redeploy and a safe live test.
 - 1,000-file certification is pending.
 - Subscription is not implemented.
 - Additional connectors remain roadmap items.

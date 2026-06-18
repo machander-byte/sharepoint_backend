@@ -1,27 +1,17 @@
 # ZMS UI V2 Browser Smoke Test
 
-Status date: 2026-06-15
+Status date: 2026-06-18
 
 ## Scope
 
-Browser smoke for the deployed final project / pre-production demo:
-
-- `https://zms-migration-suite.vercel.app/login`
-- protected `/v2` routes
-- authenticated V2 reviewer pages
-- polished legacy reviewer routes
-- backend runtime status shown in V2
+Browser smoke for the deployed pre-production demo at `https://zms-migration-suite.vercel.app`.
 
 ## Smoke Results
 
 | Page / Flow | Result |
 | --- | --- |
-| `/login` | Passed; clean final demo login |
-| `/v2` unauthenticated | Redirects to `/login` |
-| `/v2/tutorial` unauthenticated | Redirects to `/login` |
-| `/v2/monitor` unauthenticated | Redirects to `/login` |
-| Google/Supabase login | Passed in browser |
-| Authenticated `/v2` | Passed; runtime `Healthy` |
+| `/login` | Public alias returns 200 OK; browser session redirected to authenticated dashboard because a session already existed |
+| Authenticated `/v2` | Passed |
 | Authenticated `/v2/command-center` | Passed |
 | Authenticated `/v2/sources` | Passed |
 | Authenticated `/v2/destinations` | Passed |
@@ -35,29 +25,20 @@ Browser smoke for the deployed final project / pre-production demo:
 | Authenticated `/v2/governance` | Passed |
 | Authenticated `/v2/settings` | Passed |
 | Authenticated `/v2/tutorial` | Passed |
-| Authenticated `/migrations` | Passed; no raw concatenated labels |
-| Authenticated `/validation` | Passed; cards and styled empty tables |
-| Authenticated `/copilot-readiness` | Passed; clean discovery-required empty state |
+| Authenticated `/migrations` | Passed |
+| Authenticated `/validation` | Passed |
+| Authenticated `/copilot-readiness` | Passed |
 | Authenticated `/reports` | Passed |
-| Authenticated `/ai` | Passed |
 | Browser console after walkthrough | 0 errors |
-| Failed network requests after walkthrough | 0 |
+| Failed network requests after walkthrough | Not directly exposed by available Playwright tool |
 | Subscription/billing UI | Not present |
 
 ## Runtime Result
 
-V2 displays:
-
-- Runtime: `Healthy`
-- Queue: `Queue empty`
-- API: `1.0.0.0`
-- Database startup: `Skipped`
-- Data source: `Live API`
+Live backend `/api/status` reports `Healthy`, database connected, schema ready, queue empty. Live backend `/api/version` still reports old Render commit `7411998`; latest backend subtree `53d6f08` is pushed but not live yet.
 
 ## Notes
 
 - V2 runtime reads `/api/status` and `/api/version`.
-- V2 no longer blocks on optional latest-record endpoints.
-- Legacy dashboard, reports, AI, and Copilot pages no longer auto-probe unsupported optional latest-record endpoints on load.
-- Live domain record counts are shown as zero unless loaded by a dedicated feature page.
 - Historical migration evidence remains labeled separately from current live records.
+- Frontend deployment is current; backend redeploy is still required for latest empty-folder backend code.

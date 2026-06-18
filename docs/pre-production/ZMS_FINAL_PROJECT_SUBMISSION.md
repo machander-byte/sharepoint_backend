@@ -1,6 +1,6 @@
 # ZMS Final Project Submission
 
-Status date: 2026-06-15
+Status date: 2026-06-18
 
 ## Project Name
 
@@ -35,10 +35,12 @@ Do not place passwords in Git, docs, screenshots, or chat transcripts. Share rev
 | Area | Result |
 | --- | --- |
 | Backend build | Passed |
-| Backend tests | Passed, 46/46 |
+| Backend tests | Passed, 49/49 |
 | Frontend build | Passed |
-| Render deployed | Passed, commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
-| Vercel deployed | Passed, UI polish commit `adf7d71` |
+| Latest full repo pushed | Passed, commit `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
+| Backend subtree pushed | Passed, commit `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` |
+| Render deployed | Healthy, but still serving old commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
+| Vercel deployed | Passed, deployment `dpl_GBcUFfeiDb9HTUbJGmSUcbiQD616` |
 | Login | Passed with Google/Supabase browser flow |
 | Authenticated `/v2` | Passed |
 | Authenticated legacy reviewer routes | Passed |
@@ -61,7 +63,7 @@ Do not place passwords in Git, docs, screenshots, or chat transcripts. Share rev
 
 ## Current Limitations
 
-- Empty-folder preservation is not complete.
+- Empty-folder preservation is implemented and test-covered, but live validation is blocked until Render redeploys the latest backend subtree.
 - 1,000-file migration is pending.
 - 10,000-file migration is pending.
 - Subscription is not implemented.
@@ -73,4 +75,4 @@ Do not place passwords in Git, docs, screenshots, or chat transcripts. Share rev
 
 ## Final Decision
 
-Ready for final project review as a pre-production demo, with the limitations above documented.
+Ready with limitations for final project review as a pre-production demo. Do not claim latest backend deployment or live empty-folder certification until Render redeploys to subtree commit `53d6f08` or later.

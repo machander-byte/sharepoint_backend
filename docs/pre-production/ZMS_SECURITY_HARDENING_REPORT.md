@@ -1,6 +1,6 @@
 # ZMS Security Hardening Report
 
-Status date: 2026-06-15
+Status date: 2026-06-18
 
 ## Completed
 
@@ -31,8 +31,8 @@ Status date: 2026-06-15
 | Vercel backend secrets | Not added by this pass |
 | Render backend secrets | Stored in Render only |
 | CORS wildcard on backend | Not used |
-| Auth guard for `/v2` | Passed |
-| Unauthenticated `/v2` | Redirects to `/login` |
+| Auth guard for `/v2` | Covered by frontend tests and prior browser pass |
+| Authenticated V2 walkthrough | Passed, 0 console errors |
 | Security headers | Present on backend endpoints |
 | Secrets shown on login page | Not found |
 | Secrets shown in demo screenshots | Not found |
@@ -49,7 +49,7 @@ Previously pasted credentials remain `ROTATE REQUIRED` before broader company su
 
 ## Remaining Production Hardening
 
-- Redeploy the frontend with the updated lockfile after the 2026-06-18 npm audit cleanup.
+- Redeploy Render backend to subtree commit `53d6f08` so the empty-folder implementation is live.
 - Rotate all previously exposed credentials before external company sharing.
 - Add a repeatable authenticated E2E suite.
 - Certify larger scale migrations before production claims.

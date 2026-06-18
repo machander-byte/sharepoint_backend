@@ -145,7 +145,17 @@ Mark the product ready for company review only when:
 - Login page was cleaned for reviewer use and does not show passwords, tokens, backend URLs, or build/debug values.
 - Legacy reviewer routes `/migrations`, `/validation`, and `/copilot-readiness` were polished to remove raw concatenated labels.
 - Dashboard, Reports, AI, and Copilot pages no longer auto-probe unsupported optional latest-record endpoints on load.
-- Vercel final bundle contains the public Render backend URL and was deployed from frontend source commit `adf7d71`.
-- Authenticated reviewer walkthrough completed with 0 console errors and 0 failed network requests.
+- Vercel final bundle contains the public Render backend URL. The latest production redeploy was completed on 2026-06-18.
+- Authenticated reviewer walkthrough completed with 0 console errors. Failed network request count was not directly exposed by the available Playwright tool during the 2026-06-18 pass.
 - Demo screenshots were captured and committed under `docs/pre-production/screenshots`.
 - Demo video was not recorded because the connected Playwright browser session did not expose video recording.
+
+## 2026-06-18 Push, Deploy, And Empty-Folder Addendum
+
+- Latest full repo commit `8afdb8e9cc1817f804a81710aa1ab51b88fca907` was pushed to `origin/master`.
+- Latest backend subtree commit `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` was pushed to `origin/main`.
+- Render backend is healthy but still reports live commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8`; manual redeploy or auto-deploy repair is required before claiming the empty-folder fix is live.
+- Vercel production deployment passed and the public alias serves the latest frontend bundle with the Render API base URL.
+- Local backend tests pass 49/49, frontend tests pass 3/3, frontend build passes, and npm audit reports 0 vulnerabilities.
+- Authenticated V2 browser walkthrough completed with 0 console errors.
+- Live empty-folder validation is blocked until the Render backend redeploy is complete and a safe small test source/target is approved.

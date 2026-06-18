@@ -23,13 +23,14 @@ The project has completed verified Google Drive to SharePoint Online migration t
 
 - Stage 0: 22/22 files migrated, 0 failures, 0 retries, source and target bytes matched.
 - Stage 1: 231/231 files migrated, 0 failures, 0 retries, Microsoft Graph verified target bytes matched source bytes.
-- Backend automated tests: 46/46 passed.
+- Backend automated tests: 49/49 passed.
 - Frontend V2 test scaffold: 3/3 passed.
 - Frontend production build: passed.
 - npm audit: 0 vulnerabilities after dependency cleanup.
 - Deployed frontend and backend health checks passed.
+- Empty-folder preservation is implemented and test-covered; live certification is pending Render redeploy and a safe live validation run.
 
-This is ready for project review as a pre-production demo with real migration evidence. It is not ready for market launch or full ShareGate comparison. Remaining gaps include 1,000-file and 10,000-file live certification, empty-folder preservation, certified metadata and permission writeback, OneDrive/Teams/Exchange/Box completion, controlled recovery testing, report download/open verification at scale, dependency audit cleanup, and credential rotation before broader sharing.
+This is ready for project review as a pre-production demo with real migration evidence. It is not ready for market launch or full ShareGate comparison. Remaining gaps include 1,000-file and 10,000-file live certification, live empty-folder certification, certified metadata and permission writeback, OneDrive/Teams/Exchange/Box completion, controlled recovery testing, report download/open verification at scale, Render redeploy for the latest backend code, and credential rotation before broader sharing.
 
 ## Tight Reviewer-Facing Position
 
@@ -227,7 +228,7 @@ Examples:
 - 0 failed files.
 - 0 retries.
 - Graph bytes matched.
-- Backend tests 46/46 passed.
+- Backend tests 49/49 passed.
 
 Function:
 
@@ -640,25 +641,25 @@ Important limitation:
 - Source public inventory counted 568 Google Drive folders.
 - Microsoft Graph found 61 target folders.
 - This is not file data loss: all 231 files and all bytes matched.
-- The engine creates folder paths needed by migrated files, but it does not yet migrate empty source folders as first-class objects.
+- Historical Stage 1 did not prove first-class empty-folder preservation. Current code now models folders as first-class migration items and creates real target folders, but live certification is pending Render redeploy and a safe validation run.
 
 ## Build, Test, And Deployment Reports
 
 Latest local verification on 2026-06-18:
 
-- `dotnet test .\Zettalogix.MigrationSuite.sln --no-build`: passed, 46/46 tests.
+- `dotnet test .\Zettalogix.MigrationSuite.sln --no-build`: passed, 49/49 tests.
 - `npm test`: passed, 3/3 V2 frontend tests.
 - `npm run build`: passed.
 - `npm audit`: passed, 0 vulnerabilities after upgrading Vite and related frontend dependencies.
 - Frontend build warning: one JavaScript chunk is larger than 500 kB after minification. This should be fixed later with route-level lazy loading or manual chunks.
 
-Latest recorded final demo report on 2026-06-15:
+Latest recorded final demo report on 2026-06-18:
 
 - Backend build passed: 0 warnings, 0 errors.
-- Backend tests passed: 46/46.
+- Backend tests passed: 49/49.
 - Frontend build passed.
-- Render backend live and healthy at `https://sharepoint-backend-g5vc.onrender.com`.
-- Vercel frontend live at `https://zms-migration-suite.vercel.app`.
+- Render backend live and healthy at `https://sharepoint-backend-g5vc.onrender.com`, but still serving old backend commit `7411998`; latest backend subtree `53d6f08` is pushed and awaits redeploy.
+- Vercel frontend redeployed and live at `https://zms-migration-suite.vercel.app`.
 - Supabase/Google login verified in browser.
 - Authenticated `/v2` and requested V2 pages loaded with 0 browser console errors.
 - Legacy reviewer routes loaded with no raw concatenated labels.
@@ -904,14 +905,13 @@ Safe claims:
 - ZMS has working authentication and deployed frontend/backend health.
 - ZMS completed live Google Drive to SharePoint Online file migration stages with 0 failed files and matching byte verification.
 - ZMS has an enterprise migration readiness, planning, validation, reporting, AI-advisory, and governance review UI.
-- Backend tests pass 46/46, frontend tests pass 3/3, frontend production build passes, and npm audit reports 0 vulnerabilities locally.
+- Backend tests pass 49/49, frontend tests pass 3/3, frontend production build passes, and npm audit reports 0 vulnerabilities locally.
 
 Do not claim yet:
 
 - Full ShareGate replacement.
 - Production-scale enterprise certification.
-- Full folder preservation.
-- Empty-folder preservation.
+- Live empty-folder certification.
 - OneDrive, Teams, Exchange, or Box migration completion.
 - Certified permission preservation.
 - Certified metadata preservation.
@@ -924,7 +924,7 @@ Use this short version in the review:
 
 | Test area | Result |
 | --- | --- |
-| Backend tests | Passed, 46/46 |
+| Backend tests | Passed, 49/49 |
 | Frontend tests | Passed, 3/3 |
 | Frontend production build | Passed |
 | npm audit | Passed, 0 vulnerabilities locally |

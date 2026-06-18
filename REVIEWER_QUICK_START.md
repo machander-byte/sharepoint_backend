@@ -2,17 +2,18 @@
 
 Status: Pre-production demo with real live migration proof.
 
-Not claiming: full ShareGate replacement, production scale, empty-folder preservation, certified metadata writeback, or certified permission writeback yet.
+Not claiming: full ShareGate replacement, production scale, live empty-folder certification, certified metadata writeback, or certified permission writeback yet.
 
 Claiming:
 
 - Live Google Drive -> SharePoint migration proof: 231 files, 0 failures, byte-verified by Microsoft Graph.
 - Enterprise migration readiness, planning, validation, governance, and reporting UI.
 - Clear evidence separation between live runtime state and historical validation proof.
-- Backend tests: 46/46 passing.
+- Backend tests: 49/49 passing.
 - Frontend tests: 3/3 passing.
 - Frontend production build passes.
 - npm audit: 0 vulnerabilities locally after dependency cleanup.
+- Empty-folder preservation: implemented in code and covered by tests; live validation is blocked until Render redeploys the latest backend subtree.
 
 ## How To Review
 
@@ -34,7 +35,7 @@ Claiming:
 
 - Stage 0 live migration: 22/22 files, 0 failures, 0 retries, source and target bytes matched.
 - Stage 1 live migration: 231/231 files, 0 failures, 0 retries, Microsoft Graph target bytes matched source bytes.
-- Backend health/status/version passed in the final deployment report.
+- Backend health/status/version passed in the final deployment report, but Render is still serving the previous backend commit.
 - Supabase/Google login passed in browser.
 - Authenticated V2 walkthrough passed with 0 console errors in the final deployment report.
 

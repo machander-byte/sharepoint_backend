@@ -1,64 +1,51 @@
 # ZMS Test Report
 
-Generated: 2026-06-15
+Generated: 2026-06-18
 
-## Final Demo Summary
+## Current Result
 
-ZMS is deployed as a final project / pre-production review demo.
+ZMS is ready to share as a pre-production review demo with limitations. Latest code is pushed, frontend is redeployed, and the live backend is healthy. Render is still serving the previous backend subtree commit, so the empty-folder backend fix is pushed but not live on Render yet.
 
-- Backend build passed: 0 warnings, 0 errors.
-- Backend tests passed: 46/46.
-- Frontend build passed.
-- Render backend is live and healthy at `https://sharepoint-backend-g5vc.onrender.com`.
-- Vercel frontend is live at `https://zms-migration-suite.vercel.app`.
-- Supabase/Google login was verified in the browser.
-- Authenticated `/v2` and the requested V2 pages loaded with no browser console errors.
-- Legacy reviewer routes `/migrations`, `/validation`, `/reports`, `/ai`, and `/copilot-readiness` loaded with no raw concatenated labels.
-- CORS preflight from `https://zms-migration-suite.vercel.app` to the Render backend passed.
-
-## Deployed Versions
+## Versions And Deployment
 
 | Area | Result |
 | --- | --- |
-| Frontend deployment source commit | `adf7d71` |
-| Backend source latest commit | `669aba1` |
-| Render backend subtree commit | `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
-| Frontend UI polish commit | `adf7d71` |
-| Frontend JS asset | `index-C-DJmnwO.js` |
+| Latest GitHub `master` commit | `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
+| Backend subtree pushed to `main` | Yes, `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` |
+| Render live commit | `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
+| Render deployment state | Healthy, but redeploy to `53d6f08` still pending/manual |
+| Vercel production deployment | Passed, `dpl_GBcUFfeiDb9HTUbJGmSUcbiQD616` |
+| Frontend URL | `https://zms-migration-suite.vercel.app` |
+| Frontend asset observed | `assets/index-JcPlGQ7_.js` |
 
-## Final Backend Endpoint Results
-
-| Endpoint | Result |
-| --- | --- |
-| `/api/version` | 200 OK, commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
-| `/api/health` | 200 OK, `Healthy`, DB connected, schema ready |
-| `/api/status` | 200 OK, `Healthy`, schema `Ready`, queue empty |
-
-## Final Frontend Smoke
+## Local Verification
 
 | Check | Result |
 | --- | --- |
-| `/login` | 200 OK; clean reviewer login loaded |
-| Unauthenticated `/v2` | Redirects to `/login` |
-| Unauthenticated `/v2/tutorial` | Redirects to `/login` |
-| Unauthenticated `/v2/monitor` | Redirects to `/login` |
-| Login | Google/Supabase login succeeded in browser |
-| Authenticated `/v2` | Loaded and showed backend runtime `Healthy` |
-| Browser console | 0 errors after final V2 walkthrough |
-| CORS | Passed for final frontend origin |
+| `dotnet build .\Zettalogix.MigrationSuite.sln` | Passed, 0 warnings, 0 errors |
+| `dotnet test .\Zettalogix.MigrationSuite.sln --no-build` | Passed, 49/49 |
+| `npm ci` | Passed, 0 vulnerabilities |
+| `npm test` | Passed, 3/3 |
+| `npm run build` | Passed |
+| `npm audit --json` | Passed, 0 vulnerabilities |
+| `git ls-files -u` | Empty |
+| `git diff --check` | Passed |
 
-## Legacy Reviewer Routes Tested
+## Live Backend Endpoint Results
 
-- `/dashboard`
-- `/migrations`
-- `/validation`
-- `/reports`
-- `/ai`
-- `/copilot-readiness`
+| Endpoint | Result |
+| --- | --- |
+| `/api/version` | 200 OK, still reports commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
+| `/api/health` | 200 Healthy, DB connected, schema ready |
+| `/api/status` | 200 Healthy, schema ready, queue empty |
+| CORS preflight from Vercel origin | 204, allowed origin returned |
+| CORS preflight from unrelated origin | No allow-origin returned |
 
-All listed legacy reviewer routes loaded in the authenticated browser pass with 0 console errors, 0 failed network requests, and no raw concatenated labels such as `StatusNOT_STARTED`, `Passed0`, or `addNew migration`.
+## Frontend Browser Smoke
 
-## V2 Pages Tested
+Authenticated browser walkthrough passed with 0 console errors.
+
+Routes loaded:
 
 - `/v2`
 - `/v2/command-center`
@@ -74,44 +61,36 @@ All listed legacy reviewer routes loaded in the authenticated browser pass with 
 - `/v2/governance`
 - `/v2/settings`
 - `/v2/tutorial`
+- `/migrations`
+- `/validation`
+- `/copilot-readiness`
+- `/reports`
 
-All pages loaded, were not blank, showed no subscription/billing UI, and had no console errors in the authenticated browser pass.
+Network request failure count was not directly exposed by the available Playwright tool. Critical public HTTP checks passed except the direct Vercel deployment URL, which returned 401 due deployment protection; the public alias works.
 
-## Verification Commands Run
+## Empty-Folder Proof
 
-```powershell
-Set-Location "d:\projects\Shearpoint to google\sharepoint_backend"
-dotnet build .\Zettalogix.MigrationSuite.sln
-dotnet test .\Zettalogix.MigrationSuite.sln --no-build
-
-Set-Location "d:\projects\Shearpoint to google\ZettalogixMigrationSuite\ZMS.WebUI"
-npm run build
-npx vercel deploy --prod --yes -b VITE_API_BASE_URL=https://sharepoint-backend-g5vc.onrender.com -b VITE_APP_COMMIT=adf7d71
-```
+| Proof Type | Result |
+| --- | --- |
+| Implementation | Complete in commit `473c0e6` |
+| Backend tests | Passed, 49/49 |
+| File-share folder enumeration tests | Passed |
+| Folder validation test | Passed |
+| Live Render proof | Blocked until Render redeploys to subtree commit `53d6f08` |
 
 ## Demo Artifacts
 
-- Demo video recorded: No. The connected Playwright browser session did not expose video recording.
-- Demo script created: `docs/pre-production/ZMS_DEMO_VIDEO_SCRIPT.md`.
-- Demo screenshots captured: Yes, indexed in `docs/pre-production/ZMS_DEMO_SCREENSHOTS_INDEX.md`.
-
-## Known Warnings
-
-- Vite chunk-size warning remains present and accepted for this demo.
-- Vercel `npm ci` reports 6 dependency audit findings: 5 moderate, 1 high. These need a dependency upgrade pass before a production release.
+- Screenshots captured: Yes, under `docs/pre-production/screenshots/`.
+- Demo video recorded: No. The available Playwright session does not expose video recording.
+- Demo script: `docs/pre-production/ZMS_DEMO_VIDEO_SCRIPT.md`.
 
 ## Known Limitations
 
-- Empty-folder preservation is not complete as first-class SharePoint folder migration.
-- Stage 2 1,000-file migration is pending.
-- Stage 3 10,000-file migration is pending.
+- Render backend must be manually redeployed or auto-deploy fixed so it runs subtree commit `53d6f08`.
+- Live empty-folder validation is blocked until that redeploy is complete and a safe small source/target test is approved.
+- Credential rotation remains required before wider sharing.
+- 1,000-file and 10,000-file certifications are pending.
 - Subscription/payment is not implemented.
-- OneDrive, Teams, Exchange, and Box are roadmap items.
-- Permission writeback is not certified.
-- Metadata writeback is not certified.
-- Full ShareGate parity is not claimed.
-- Production-scale certification is not claimed.
-
-## Security Note
-
-No secret values were added to Git, frontend source, or docs in this pass. Previously pasted credentials remain marked `ROTATE REQUIRED` before broader company submission.
+- OneDrive, Teams, Exchange, and Box remain roadmap items.
+- Permission and metadata writeback are not certified.
+- Full ShareGate parity and production-scale certification are not claimed.
