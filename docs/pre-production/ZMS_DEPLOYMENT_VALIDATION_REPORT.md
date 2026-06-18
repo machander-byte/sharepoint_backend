@@ -10,7 +10,7 @@ Latest code is pushed and the frontend is redeployed. The live backend is health
 
 | Item | Result |
 | --- | --- |
-| Full repo `master` push | Passed, `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
+| Frontend app source `master` push | Passed, `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
 | Backend subtree `main` push | Passed, `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` |
 | Render live commit | `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
 | Render backend URL | `https://sharepoint-backend-g5vc.onrender.com` |

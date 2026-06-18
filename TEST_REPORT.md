@@ -10,7 +10,7 @@ ZMS is ready to share as a pre-production review demo with limitations. Latest c
 
 | Area | Result |
 | --- | --- |
-| Latest GitHub `master` commit | `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
+| Latest frontend app source commit deployed | `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
 | Backend subtree pushed to `main` | Yes, `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` |
 | Render live commit | `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
 | Render deployment state | Healthy, but redeploy to `53d6f08` still pending/manual |

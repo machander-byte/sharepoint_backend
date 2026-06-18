@@ -152,7 +152,7 @@ Mark the product ready for company review only when:
 
 ## 2026-06-18 Push, Deploy, And Empty-Folder Addendum
 
-- Latest full repo commit `8afdb8e9cc1817f804a81710aa1ab51b88fca907` was pushed to `origin/master`.
+- Latest frontend app source commit `8afdb8e9cc1817f804a81710aa1ab51b88fca907` was pushed to `origin/master` and deployed to Vercel.
 - Latest backend subtree commit `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` was pushed to `origin/main`.
 - Render backend is healthy but still reports live commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8`; manual redeploy or auto-deploy repair is required before claiming the empty-folder fix is live.
 - Vercel production deployment passed and the public alias serves the latest frontend bundle with the Render API base URL.

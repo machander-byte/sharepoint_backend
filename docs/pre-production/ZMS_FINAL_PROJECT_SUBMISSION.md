@@ -37,7 +37,7 @@ Do not place passwords in Git, docs, screenshots, or chat transcripts. Share rev
 | Backend build | Passed |
 | Backend tests | Passed, 49/49 |
 | Frontend build | Passed |
-| Latest full repo pushed | Passed, commit `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
+| Latest frontend app source pushed | Passed, commit `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
 | Backend subtree pushed | Passed, commit `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` |
 | Render deployed | Healthy, but still serving old commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
 | Vercel deployed | Passed, deployment `dpl_GBcUFfeiDb9HTUbJGmSUcbiQD616` |
