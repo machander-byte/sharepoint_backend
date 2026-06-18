@@ -18,4 +18,8 @@ public class MigrationItem
     public DateTimeOffset CreatedUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? StartedUtc { get; set; }
     public DateTimeOffset? CompletedUtc { get; set; }
+
+    public bool IsFolder =>
+        Metadata.TryGetValue(MigrationItemMetadataKeys.ItemType, out var itemType)
+        && string.Equals(itemType, MigrationItemMetadataKeys.ItemTypeFolder, StringComparison.OrdinalIgnoreCase);
 }

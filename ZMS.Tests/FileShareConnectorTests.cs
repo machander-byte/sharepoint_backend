@@ -75,6 +75,67 @@ public class FileShareConnectorTests
         }
     }
 
+    [Fact]
+    public async Task GetFoldersAsync_EnumeratesNestedEmptyFolders()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"zms-file-share-folders-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(root, "Finance", "EmptyArchive", "Nested"));
+        Directory.CreateDirectory(Path.Combine(root, "Finance", "WithFile"));
+        await File.WriteAllTextAsync(Path.Combine(root, "Finance", "WithFile", "budget.txt"), "content");
+
+        try
+        {
+            var connector = new FileShareSourceConnector();
+            var connection = new ConnectionProfile
+            {
+                Type = ConnectionType.FileShare,
+                Name = "Local",
+                RootPath = root,
+                Url = root
+            };
+
+            var folders = await connector.GetFoldersAsync(connection, root, null, CancellationToken.None);
+
+            Assert.Contains(folders, folder => folder.RelativePath == "Finance");
+            Assert.Contains(folders, folder => folder.RelativePath == "Finance/EmptyArchive");
+            Assert.Contains(folders, folder => folder.RelativePath == "Finance/EmptyArchive/Nested");
+            Assert.All(folders, folder => Assert.Equal(MigrationItemMetadataKeys.ItemTypeFolder, folder.Metadata[MigrationItemMetadataKeys.ItemType]));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task GetFoldersAsync_AnnotatesInvalidSharePointCharacters()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"zms-file-share-folder-risk-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(Path.Combine(root, "bad#folder"));
+
+        try
+        {
+            var connector = new FileShareSourceConnector();
+            var connection = new ConnectionProfile
+            {
+                Type = ConnectionType.FileShare,
+                Name = "Local",
+                RootPath = root,
+                Url = root
+            };
+
+            var folders = await connector.GetFoldersAsync(connection, root, null, CancellationToken.None);
+            var folder = Assert.Single(folders);
+
+            Assert.Equal("True", folder.Metadata["InvalidSharePointCharacterRisk"]);
+            Assert.Contains("#", folder.Metadata["InvalidSharePointCharacters"]);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static string ToIoPath(string path)
     {
         if (!OperatingSystem.IsWindows() || path.StartsWith(@"\\?\", StringComparison.Ordinal))

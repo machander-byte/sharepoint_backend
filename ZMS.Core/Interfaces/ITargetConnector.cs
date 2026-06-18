@@ -21,6 +21,12 @@ public interface ITargetConnector
         string? libraryUrlSegment,
         CancellationToken cancellationToken);
 
+    Task<string> EnsureFolderAsync(
+        ConnectionProfile connection,
+        MigrationJob job,
+        MigrationItem item,
+        CancellationToken cancellationToken);
+
     Task<string> UploadFileAsync(
         ConnectionProfile connection,
         MigrationJob job,

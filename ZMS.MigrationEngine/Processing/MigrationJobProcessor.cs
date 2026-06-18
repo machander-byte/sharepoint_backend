@@ -156,8 +156,10 @@ public class MigrationJobProcessor : BackgroundService
 
                     try
                     {
-                        await using var content = await sourceConnector.OpenReadAsync(sourceConnection, item, cancellationToken);
-                        var targetPath = await targetConnector.UploadFileAsync(targetConnection, job, item, content, cancellationToken);
+                        var targetPath = item.IsFolder
+                            ? await targetConnector.EnsureFolderAsync(targetConnection, job, item, cancellationToken)
+                            : await UploadFileAsync(sourceConnector, targetConnector, sourceConnection, targetConnection, job, item, cancellationToken);
+
                         item.TargetPath = targetPath;
                         item.Status = MigrationItemStatus.Completed;
                         item.ErrorMessage = null;
@@ -169,7 +171,9 @@ public class MigrationJobProcessor : BackgroundService
                             job.Id,
                             item.Id,
                             LogSeverity.Information,
-                            $"Copied '{item.FileName}' successfully.",
+                            item.IsFolder
+                                ? $"Ensured folder '{item.FileName}' successfully."
+                                : $"Copied '{item.FileName}' successfully.",
                             null,
                             cancellationToken);
                     }
@@ -315,6 +319,19 @@ public class MigrationJobProcessor : BackgroundService
         {
             _logger.LogError(exception, "Failed to recover interrupted migration jobs during startup.");
         }
+    }
+
+    private static async Task<string> UploadFileAsync(
+        ISourceConnector sourceConnector,
+        ITargetConnector targetConnector,
+        ConnectionProfile sourceConnection,
+        ConnectionProfile targetConnection,
+        MigrationJob job,
+        MigrationItem item,
+        CancellationToken cancellationToken)
+    {
+        await using var content = await sourceConnector.OpenReadAsync(sourceConnection, item, cancellationToken);
+        return await targetConnector.UploadFileAsync(targetConnection, job, item, content, cancellationToken);
     }
 
     private static async Task UpdateJobSummaryAsync(

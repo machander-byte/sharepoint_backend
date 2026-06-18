@@ -8,9 +8,9 @@ namespace ZMS.Connectors.GoogleDrive.Connectors;
 public class GoogleDriveSourceConnector : ISourceConnector
 {
     private const string GoogleDriveFileIdKey = "GoogleDriveFileId";
+    private const string GoogleDriveFolderIdKey = "GoogleDriveFolderId";
     private const string GoogleDriveMimeTypeKey = "GoogleDriveMimeType";
     private const string GoogleDriveExportMimeTypeKey = "GoogleDriveExportMimeType";
-    private const string RelativePathKey = "RelativePath";
     private const string GoogleDriveFolderMimeType = "application/vnd.google-apps.folder";
 
     private readonly GoogleDriveApiClient _apiClient;
@@ -89,9 +89,23 @@ public class GoogleDriveSourceConnector : ISourceConnector
         var rootFolderId = _apiClient.ResolveFolderId(connection, sourceLocation);
         var files = new List<FileItem>();
 
-        await WalkFolderAsync(connection, rootFolderId, string.Empty, files, cancellationToken);
+        await WalkFolderAsync(connection, rootFolderId, string.Empty, files, null, cancellationToken);
 
         return files.OrderBy(file => file.SourcePath).ToArray();
+    }
+
+    public async Task<IReadOnlyCollection<FolderItem>> GetFoldersAsync(
+        ConnectionProfile connection,
+        string sourceLocation,
+        string? libraryName,
+        CancellationToken cancellationToken)
+    {
+        var rootFolderId = _apiClient.ResolveFolderId(connection, sourceLocation);
+        var folders = new List<FolderItem>();
+
+        await WalkFolderAsync(connection, rootFolderId, string.Empty, null, folders, cancellationToken);
+
+        return folders.OrderBy(folder => folder.RelativePath).ToArray();
     }
 
     public async Task<Stream> OpenReadAsync(
@@ -120,7 +134,8 @@ public class GoogleDriveSourceConnector : ISourceConnector
         ConnectionProfile connection,
         string folderId,
         string relativeFolderPath,
-        List<FileItem> files,
+        List<FileItem>? files,
+        List<FolderItem>? folders,
         CancellationToken cancellationToken)
     {
         var children = await _apiClient.ListChildrenAsync(connection, folderId, cancellationToken);
@@ -130,7 +145,26 @@ public class GoogleDriveSourceConnector : ISourceConnector
             if (string.Equals(child.MimeType, GoogleDriveFolderMimeType, StringComparison.OrdinalIgnoreCase))
             {
                 var childFolderPath = CombinePath(relativeFolderPath, child.Name);
-                await WalkFolderAsync(connection, child.Id, childFolderPath, files, cancellationToken);
+                folders?.Add(new FolderItem
+                {
+                    Name = child.Name,
+                    SourcePath = childFolderPath,
+                    RelativePath = childFolderPath,
+                    ModifiedUtc = child.ModifiedTime ?? DateTimeOffset.UtcNow,
+                    Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [MigrationItemMetadataKeys.RelativePath] = childFolderPath,
+                        [MigrationItemMetadataKeys.ItemType] = MigrationItemMetadataKeys.ItemTypeFolder,
+                        [GoogleDriveFolderIdKey] = child.Id
+                    }
+                });
+
+                await WalkFolderAsync(connection, child.Id, childFolderPath, files, folders, cancellationToken);
+                continue;
+            }
+
+            if (files is null)
+            {
                 continue;
             }
 
@@ -145,7 +179,8 @@ public class GoogleDriveSourceConnector : ISourceConnector
                 ModifiedUtc = child.ModifiedTime ?? DateTimeOffset.UtcNow,
                 Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    [RelativePathKey] = relativePath,
+                    [MigrationItemMetadataKeys.RelativePath] = relativePath,
+                    [MigrationItemMetadataKeys.ItemType] = MigrationItemMetadataKeys.ItemTypeFile,
                     [GoogleDriveFileIdKey] = child.Id,
                     [GoogleDriveMimeTypeKey] = child.MimeType
                 }

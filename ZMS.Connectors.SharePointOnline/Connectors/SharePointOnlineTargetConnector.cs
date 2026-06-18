@@ -69,4 +69,58 @@ public class SharePointOnlineTargetConnector : ITargetConnector
         _logger.LogInformation("Uploading '{FileName}' to '{TargetLibraryName}'.", item.FileName, job.TargetLibraryName);
         return await _fileTransferService.TransferAsync(connection, job, item, content, cancellationToken);
     }
+
+    public async Task<string> EnsureFolderAsync(
+        ConnectionProfile connection,
+        MigrationJob job,
+        MigrationItem item,
+        CancellationToken cancellationToken)
+    {
+        var drive = await _graphClient.ResolveDriveAsync(
+            connection,
+            job.TargetSiteUrl,
+            job.TargetLibraryName,
+            cancellationToken);
+
+        var relativeFolderPath = ResolveRelativeFolderPath(job, item);
+        await _graphClient.EnsureFolderPathAsync(
+            connection,
+            drive.Id,
+            relativeFolderPath,
+            cancellationToken);
+
+        _logger.LogInformation(
+            "Ensured folder '{RelativeFolderPath}' in target library '{TargetLibraryName}'.",
+            relativeFolderPath,
+            job.TargetLibraryName);
+
+        return $"{drive.WebUrl.TrimEnd('/')}/{relativeFolderPath}";
+    }
+
+    private static string ResolveRelativeFolderPath(MigrationJob job, MigrationItem item)
+    {
+        var relativePath = item.Metadata.TryGetValue(MigrationItemMetadataKeys.RelativePath, out var metadataPath)
+            ? metadataPath
+            : item.FileName;
+
+        relativePath = NormalizeRelativePath(relativePath, item.FileName);
+        return AddTargetRootPath(job.TargetRootPath, relativePath);
+    }
+
+    private static string AddTargetRootPath(string? targetRootPath, string relativePath)
+    {
+        var normalizedRoot = targetRootPath?.Trim().Replace('\\', '/').Trim('/') ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(normalizedRoot))
+        {
+            return relativePath;
+        }
+
+        return $"{normalizedRoot}/{relativePath.TrimStart('/')}";
+    }
+
+    private static string NormalizeRelativePath(string candidatePath, string fallbackFolderName)
+    {
+        var normalized = candidatePath.Trim().Replace('\\', '/').Trim('/');
+        return string.IsNullOrWhiteSpace(normalized) ? fallbackFolderName.Trim().Replace('\\', '/').Trim('/') : normalized;
+    }
 }

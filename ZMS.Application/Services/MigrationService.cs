@@ -228,22 +228,27 @@ public class MigrationService : IMigrationService
         sourceConnection = sourceConnection.WithUnprotectedSecrets(_secretProtector);
 
         var sourceConnector = _connectorResolver.ResolveSource(sourceConnection);
+        var discoveredFolders = await sourceConnector.GetFoldersAsync(
+            sourceConnection,
+            job.SourceLocation,
+            job.SourceLibraryName,
+            cancellationToken);
+
         var discoveredFiles = await sourceConnector.GetFilesAsync(
             sourceConnection,
             job.SourceLocation,
             job.SourceLibraryName,
             cancellationToken);
 
-        var items = discoveredFiles.Select(file => new MigrationItem
-        {
-            JobId = job.Id,
-            FileName = file.Name,
-            SourcePath = file.SourcePath,
-            FileSizeInBytes = file.SizeInBytes,
-            Metadata = job.PreserveMetadata
-                ? new Dictionary<string, string>(file.Metadata, StringComparer.OrdinalIgnoreCase)
-                : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        }).ToArray();
+        var folderItems = discoveredFolders
+            .Select(folder => CreateFolderMigrationItem(job, folder))
+            .Where(item => item.Metadata.TryGetValue(MigrationItemMetadataKeys.RelativePath, out var relativePath)
+                && !string.IsNullOrWhiteSpace(relativePath))
+            .GroupBy(item => item.Metadata[MigrationItemMetadataKeys.RelativePath], StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First());
+
+        var fileItems = discoveredFiles.Select(file => CreateFileMigrationItem(job, file));
+        var items = folderItems.Concat(fileItems).ToArray();
 
         if (items.Length > 0)
         {
@@ -260,10 +265,56 @@ public class MigrationService : IMigrationService
             job.Id,
             null,
             LogSeverity.Information,
-            $"Discovered {items.Length} migration item(s) for the job.",
+            $"Discovered {items.Length} migration item(s) for the job: {discoveredFolders.Count} folder(s), {discoveredFiles.Count} file(s).",
             null,
             cancellationToken);
     }
+
+    private static MigrationItem CreateFolderMigrationItem(MigrationJob job, FolderItem folder)
+    {
+        var metadata = new Dictionary<string, string>(folder.Metadata, StringComparer.OrdinalIgnoreCase);
+
+        var relativePath = NormalizeItemPath(
+            string.IsNullOrWhiteSpace(folder.RelativePath)
+                ? folder.Name
+                : folder.RelativePath);
+
+        metadata[MigrationItemMetadataKeys.ItemType] = MigrationItemMetadataKeys.ItemTypeFolder;
+        metadata[MigrationItemMetadataKeys.RelativePath] = relativePath;
+
+        return new MigrationItem
+        {
+            JobId = job.Id,
+            FileName = string.IsNullOrWhiteSpace(folder.Name) ? Path.GetFileName(relativePath) : folder.Name,
+            SourcePath = string.IsNullOrWhiteSpace(folder.SourcePath) ? relativePath : folder.SourcePath,
+            FileSizeInBytes = 0,
+            Metadata = metadata
+        };
+    }
+
+    private static MigrationItem CreateFileMigrationItem(MigrationJob job, FileItem file)
+    {
+        var metadata = new Dictionary<string, string>(file.Metadata, StringComparer.OrdinalIgnoreCase);
+
+        metadata[MigrationItemMetadataKeys.ItemType] = MigrationItemMetadataKeys.ItemTypeFile;
+
+        if (!metadata.ContainsKey(MigrationItemMetadataKeys.RelativePath))
+        {
+            metadata[MigrationItemMetadataKeys.RelativePath] = NormalizeItemPath(file.Name);
+        }
+
+        return new MigrationItem
+        {
+            JobId = job.Id,
+            FileName = file.Name,
+            SourcePath = file.SourcePath,
+            FileSizeInBytes = file.SizeInBytes,
+            Metadata = metadata
+        };
+    }
+
+    private static string NormalizeItemPath(string value)
+        => value.Trim().Replace('\\', '/').Trim('/');
 
     private async Task<MigrationJob> RequireJobAsync(Guid jobId, string userId, CancellationToken cancellationToken)
     {

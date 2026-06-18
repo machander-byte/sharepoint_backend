@@ -230,9 +230,33 @@ public class SharePointGraphClient
             rootItem.Id,
             string.Empty,
             files,
+            null,
             cancellationToken);
 
         return files.OrderBy(file => file.RelativePath).ToArray();
+    }
+
+    public async Task<IReadOnlyCollection<SharePointFolderDescriptor>> ListDriveFoldersAsync(
+        ConnectionProfile connection,
+        string siteUrl,
+        string libraryName,
+        string? relativeRootPath,
+        CancellationToken cancellationToken)
+    {
+        var drive = await ResolveDriveAsync(connection, siteUrl, libraryName, cancellationToken);
+        var folders = new List<SharePointFolderDescriptor>();
+        var rootItem = await ResolveDriveRootItemAsync(connection, drive.Id, relativeRootPath, cancellationToken);
+
+        await WalkDriveFolderAsync(
+            connection,
+            drive,
+            rootItem.Id,
+            string.Empty,
+            null,
+            folders,
+            cancellationToken);
+
+        return folders.OrderBy(folder => folder.RelativePath).ToArray();
     }
 
     public async Task<Stream> OpenDriveItemReadAsync(
@@ -384,7 +408,8 @@ public class SharePointGraphClient
         SharePointDriveDescriptor drive,
         string parentItemId,
         string relativeFolderPath,
-        List<SharePointFileDescriptor> files,
+        List<SharePointFileDescriptor>? files,
+        List<SharePointFolderDescriptor>? folders,
         CancellationToken cancellationToken)
     {
         string? requestUri =
@@ -399,17 +424,29 @@ public class SharePointGraphClient
             {
                 if (child.Folder is not null)
                 {
+                    var childRelativePath = CombinePath(relativeFolderPath, child.Name ?? child.Id);
+
+                    folders?.Add(new SharePointFolderDescriptor(
+                        drive.Id,
+                        drive.Name,
+                        child.Id,
+                        child.Name ?? child.Id,
+                        childRelativePath,
+                        child.LastModifiedDateTime ?? DateTimeOffset.UtcNow,
+                        child.WebUrl));
+
                     await WalkDriveFolderAsync(
                         connection,
                         drive,
                         child.Id,
-                        CombinePath(relativeFolderPath, child.Name ?? child.Id),
+                        childRelativePath,
                         files,
+                        folders,
                         cancellationToken);
                     continue;
                 }
 
-                if (child.File is null)
+                if (child.File is null || files is null)
                 {
                     continue;
                 }
@@ -1162,5 +1199,14 @@ public sealed record SharePointFileDescriptor(
     string Name,
     string RelativePath,
     long SizeInBytes,
+    DateTimeOffset ModifiedUtc,
+    string? WebUrl);
+
+public sealed record SharePointFolderDescriptor(
+    string DriveId,
+    string LibraryName,
+    string DriveItemId,
+    string Name,
+    string RelativePath,
     DateTimeOffset ModifiedUtc,
     string? WebUrl);

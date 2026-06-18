@@ -134,7 +134,8 @@ public class FileShareSourceConnector : ISourceConnector
                         ModifiedUtc = fileInfo.LastWriteTimeUtc,
                         Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                         {
-                            ["RelativePath"] = relativePath,
+                            [MigrationItemMetadataKeys.RelativePath] = relativePath,
+                            [MigrationItemMetadataKeys.ItemType] = MigrationItemMetadataKeys.ItemTypeFile,
                             ["Extension"] = fileInfo.Extension,
                             ["Folder"] = StripExtendedPathPrefix(fileInfo.DirectoryName ?? string.Empty),
                             ["PathLength"] = displayPath.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -148,6 +149,57 @@ public class FileShareSourceConnector : ISourceConnector
                 })
                 .OrderBy(file => file.SourcePath)
                 .ToList();
+        }, cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<FolderItem>> GetFoldersAsync(
+        ConnectionProfile connection,
+        string sourceLocation,
+        string? libraryName,
+        CancellationToken cancellationToken)
+    {
+        var rootPath = ResolveRootPath(connection, sourceLocation);
+        var libraryPath = string.IsNullOrWhiteSpace(libraryName) ? rootPath : Path.Combine(rootPath, libraryName.Trim());
+        var libraryIoPath = ToIoPath(libraryPath);
+
+        return await Task.Run<IReadOnlyCollection<FolderItem>>(() =>
+        {
+            if (!Directory.Exists(libraryIoPath))
+            {
+                return Array.Empty<FolderItem>();
+            }
+
+            return SafeEnumerateDirectoriesRecursive(libraryIoPath)
+                .Select(path =>
+                {
+                    var directoryInfo = new DirectoryInfo(path);
+                    var displayPath = StripExtendedPathPrefix(path);
+                    var displayLibraryPath = StripExtendedPathPrefix(libraryIoPath);
+                    var relativePath = Path.GetRelativePath(displayLibraryPath, displayPath).Replace('\\', '/');
+                    var invalidCharacters = GetInvalidSharePointCharacters(directoryInfo.Name);
+
+                    return new FolderItem
+                    {
+                        Name = directoryInfo.Name,
+                        SourcePath = path,
+                        RelativePath = relativePath,
+                        ModifiedUtc = directoryInfo.LastWriteTimeUtc,
+                        Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                        {
+                            [MigrationItemMetadataKeys.RelativePath] = relativePath,
+                            [MigrationItemMetadataKeys.ItemType] = MigrationItemMetadataKeys.ItemTypeFolder,
+                            ["Folder"] = displayPath,
+                            ["PathLength"] = displayPath.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            ["PathLengthRisk"] = (displayPath.Length > SharePointPathReviewThreshold).ToString(),
+                            ["InvalidSharePointCharacters"] = invalidCharacters,
+                            ["InvalidSharePointCharacterRisk"] = (!string.IsNullOrWhiteSpace(invalidCharacters)).ToString(),
+                            ["CreatedUtc"] = directoryInfo.CreationTimeUtc.ToString("o"),
+                            ["ModifiedUtc"] = directoryInfo.LastWriteTimeUtc.ToString("o")
+                        }
+                    };
+                })
+                .OrderBy(folder => folder.RelativePath)
+                .ToArray();
         }, cancellationToken);
     }
 
@@ -223,6 +275,33 @@ public class FileShareSourceConnector : ISourceConnector
         }
 
         return files;
+    }
+
+    private static IReadOnlyCollection<string> SafeEnumerateDirectoriesRecursive(string rootPath)
+    {
+        var directories = new List<string>();
+        var pending = new Stack<string>();
+        pending.Push(rootPath);
+
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+
+            try
+            {
+                foreach (var directory in Directory.EnumerateDirectories(current))
+                {
+                    directories.Add(directory);
+                    pending.Push(directory);
+                }
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or PathTooLongException)
+            {
+                continue;
+            }
+        }
+
+        return directories;
     }
 
     private static string GetInvalidSharePointCharacters(string name)
