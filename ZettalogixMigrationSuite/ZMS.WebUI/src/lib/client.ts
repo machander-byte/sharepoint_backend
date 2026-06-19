@@ -5,8 +5,8 @@ const authStorageKeyPattern = /^(sb-.+-auth-token.*|supabase\.auth\.token)$/i;
 
 export function createClient() {
   if (!browserClient) {
-    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
-    const supabaseKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined)?.trim();
+    const supabaseUrl = normalizeFrontendEnvValue(import.meta.env.VITE_SUPABASE_URL as string | undefined);
+    const supabaseKey = normalizeFrontendEnvValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined);
 
     if (!supabaseUrl || !supabaseKey) {
       throw new Error("Supabase frontend URL and publishable key must be configured.");
@@ -47,4 +47,8 @@ function clearStorage(storage: Storage): void {
   for (const key of keysToRemove) {
     storage.removeItem(key);
   }
+}
+
+function normalizeFrontendEnvValue(value: string | undefined): string {
+  return (value ?? "").trim().replace(/[^\x20-\x7E]/g, "");
 }
