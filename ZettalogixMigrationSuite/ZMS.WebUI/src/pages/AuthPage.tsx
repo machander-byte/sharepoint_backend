@@ -9,6 +9,7 @@ interface LocationState {
   from?: {
     pathname?: string;
   };
+  authError?: string;
 }
 
 const providerLabels: Array<{ provider: Provider; label: string }> = [
@@ -21,10 +22,10 @@ export default function AuthPage(): JSX.Element {
   const [pendingProvider, setPendingProvider] = useState<Provider | null>(null);
   const [pendingEmail, setPendingEmail] = useState(false);
   const [email, setEmail] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const locationState = location.state as LocationState | null;
+  const [errorMessage, setErrorMessage] = useState(locationState?.authError ?? "");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const locationState = location.state as LocationState | null;
   const redirectPath = locationState?.from?.pathname ?? "/dashboard";
 
   if (!loading && session) {

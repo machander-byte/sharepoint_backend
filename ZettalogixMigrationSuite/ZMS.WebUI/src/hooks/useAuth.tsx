@@ -1,6 +1,6 @@
 import type { AuthChangeEvent, Provider, Session, SupabaseClient, User } from "@supabase/supabase-js";
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
-import { createClient } from "../lib/client";
+import { clearSupabaseAuthStorage, createClient } from "../lib/client";
 
 interface AuthContextValue {
   loading: boolean;
@@ -26,14 +26,25 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
-      if (!active) {
-        return;
-      }
+    supabase.auth
+      .getSession()
+      .then(({ data }: { data: { session: Session | null } }) => {
+        if (!active) {
+          return;
+        }
 
-      setSession(data.session);
-      setLoading(false);
-    });
+        setSession(data.session);
+        setLoading(false);
+      })
+      .catch(() => {
+        clearSupabaseAuthStorage();
+        if (!active) {
+          return;
+        }
+
+        setSession(null);
+        setLoading(false);
+      });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, nextSession: Session | null) => {
       setSession(nextSession);
