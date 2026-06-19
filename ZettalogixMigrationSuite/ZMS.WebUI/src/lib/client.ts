@@ -6,17 +6,19 @@ const authStorageKeyPattern = /^(sb-.+-auth-token.*|supabase\.auth\.token)$/i;
 export function createClient() {
   if (!browserClient) {
     const supabaseUrl = normalizeFrontendEnvValue(import.meta.env.VITE_SUPABASE_URL as string | undefined);
-    const supabaseKey = normalizeFrontendEnvValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined);
+    const supabaseKey =
+      normalizeFrontendEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
+      normalizeFrontendEnvValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined);
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Supabase frontend URL and publishable key must be configured.");
+      throw new Error("Supabase frontend URL and public auth key must be configured.");
     }
 
     browserClient = createSupabaseClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: true,
         detectSessionInUrl: false,
-        flowType: "pkce",
+        flowType: "implicit",
         persistSession: true
       }
     });
