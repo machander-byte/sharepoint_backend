@@ -1,7 +1,7 @@
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let browserClient: SupabaseClient | null = null;
-const authStorageKeyPattern = /^(sb-.+-auth-token|supabase\.auth\.token)$/i;
+const authStorageKeyPattern = /^(sb-.+-auth-token.*|supabase\.auth\.token)$/i;
 
 export function createClient() {
   if (!browserClient) {
@@ -15,7 +15,8 @@ export function createClient() {
     browserClient = createSupabaseClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: false,
+        flowType: "pkce",
         persistSession: true
       }
     });
