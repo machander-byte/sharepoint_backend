@@ -120,12 +120,12 @@ Mark the product ready for company review only when:
 ## 2026-06-13 Deployment Security Addendum
 
 - Render backend is failing because PostgreSQL authentication is rejected for the configured database user. The Render connection string now has the expected Supabase pooler host, port `6543`, and scoped user shape, but the database password is not accepted.
-- ROTATE REQUIRED: the Supabase database password was pasted during deployment work and must be treated as exposed before company submission. Do not reuse it as the final company-review credential.
-- ROTATE REQUIRED: a backend connection string was visible in tool/browser output during deployment troubleshooting. Do not share those logs or screenshots externally.
+- RESOLVED 2026-06-29: the exposed Supabase database password was replaced with a newly generated credential and Render was updated without committing the value.
+- RESOLVED 2026-06-29: the old backend connection string is invalid after password rotation. A local browser snapshot that contained the old value was removed and remains excluded by `.gitignore`.
 - Supabase Advisor shows public-table RLS findings. Startup hardening now enables RLS for ZMS public tables after schema creation and migrations; verify the Advisor result after backend redeploy.
-- `npm audit` previously reported frontend dependency findings in the Vite/esbuild dependency chain. Local cleanup on 2026-06-18 upgraded the frontend dependencies and now reports 0 vulnerabilities; redeploy with the updated lockfile before making the same claim for the hosted build.
+- `npm audit` previously reported frontend dependency findings in the Vite/esbuild dependency chain. The upgraded lockfile was deployed to Vercel on 2026-06-29 and `npm audit` reports 0 vulnerabilities.
 - A conservative secret-pattern scan reported only placeholders, test redaction strings, or documented variable names by path/line; no secret values were printed in this report.
-- `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, Microsoft client secret, and Supabase database password remain ROTATE REQUIRED before company submission.
+- The Supabase database password was rotated on 2026-06-29. Google and Microsoft provider credentials must still be rotated before they are enabled for a broader production audience; they are not included in the repository or reviewer package.
 
 ## 2026-06-14 Final Demo Security Addendum
 
@@ -137,7 +137,7 @@ Mark the product ready for company review only when:
 - Vercel final bundle contains the public Render backend URL.
 - Authenticated `/v2` browser walkthrough completed with 0 console errors.
 - No secret values were added to source, frontend code, docs, or reports in this pass.
-- Previously pasted credentials remain `ROTATE REQUIRED` before broader company submission.
+- The database credential was rotated on 2026-06-29. Provider-specific Google/Microsoft credentials remain subject to rotation before broader production enablement.
 - Reviewer credentials must be shared separately and must not be written into Git, docs, screenshots, or chat transcripts.
 
 ## 2026-06-15 UI Polish And Demo Addendum
@@ -154,8 +154,20 @@ Mark the product ready for company review only when:
 
 - Latest frontend app source commit `8afdb8e9cc1817f804a81710aa1ab51b88fca907` was pushed to `origin/master` and deployed to Vercel.
 - Latest backend subtree commit `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` was pushed to `origin/main`.
-- Render backend is healthy but still reports live commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8`; manual redeploy or auto-deploy repair is required before claiming the empty-folder fix is live.
+- Superseded on 2026-06-29: Render now reports live backend commit `03573c7911a9d875d61f98285e2442592692fcde`, which includes the empty-folder implementation and release hardening.
 - Vercel production deployment passed and the public alias serves the latest frontend bundle with the Render API base URL.
-- Local backend tests pass 49/49, frontend tests pass 3/3, frontend build passes, and npm audit reports 0 vulnerabilities.
+- Local backend tests pass 49/49, frontend tests pass 6/6, frontend lint and build pass, and npm audit reports 0 vulnerabilities.
 - Authenticated V2 browser walkthrough completed with 0 console errors.
-- Live empty-folder validation is blocked until the Render backend redeploy is complete and a safe small test source/target is approved.
+- The Render redeploy blocker is resolved. Live empty-folder certification still requires an approved safe source/target run.
+
+## 2026-06-29 Submission Readiness Addendum
+
+- Supabase was resumed from its paused state.
+- The Supabase database password was rotated and the Render connection string was updated without storing the credential in source control.
+- Render backend commit `03573c7911a9d875d61f98285e2442592692fcde` is live.
+- Hosted `/api/status` returns `200 Healthy`; PostgreSQL is connected and the required schema is ready.
+- Vercel production was redeployed and `https://zms-migration-suite.vercel.app` points to the new deployment.
+- Frontend CSP, frame protection, content-type protection, referrer policy, permissions policy, and OAuth-compatible opener policy are present.
+- Production Google OAuth completed and opened the authenticated dashboard.
+- Local validation passed: ESLint, 6 frontend tests, frontend production build, npm audit, backend Release build, 49 backend tests, backend publish, and NuGet vulnerability scan.
+- This is approved for controlled project submission as a pre-production demo. It is not a market-launch or production-scale certification.

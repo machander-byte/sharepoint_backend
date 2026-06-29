@@ -1,5 +1,7 @@
 # ZMS Review Text Package - 2026-06-18
 
+Updated release verification: 2026-06-29. See `docs/pre-production/ZMS_SUBMISSION_READINESS_2026-06-29.md`.
+
 This document is written as copy-paste text for project review. It intentionally avoids secrets, passwords, tokens, client secrets, refresh tokens, database connection strings, and reviewer credentials.
 
 Related review files:
@@ -24,13 +26,13 @@ The project has completed verified Google Drive to SharePoint Online migration t
 - Stage 0: 22/22 files migrated, 0 failures, 0 retries, source and target bytes matched.
 - Stage 1: 231/231 files migrated, 0 failures, 0 retries, Microsoft Graph verified target bytes matched source bytes.
 - Backend automated tests: 49/49 passed.
-- Frontend V2 test scaffold: 3/3 passed.
+- Frontend tests: 6/6 passed.
 - Frontend production build: passed.
 - npm audit: 0 vulnerabilities after dependency cleanup.
 - Deployed frontend and backend health checks passed.
-- Empty-folder preservation is implemented and test-covered; live certification is pending Render redeploy and a safe live validation run.
+- Empty-folder preservation is implemented, test-covered, and deployed; live certification still requires a safe approved validation run.
 
-This is ready for project review as a pre-production demo with real migration evidence. It is not ready for market launch or full ShareGate comparison. Remaining gaps include 1,000-file and 10,000-file live certification, live empty-folder certification, certified metadata and permission writeback, OneDrive/Teams/Exchange/Box completion, controlled recovery testing, report download/open verification at scale, Render redeploy for the latest backend code, and credential rotation before broader sharing.
+This is ready for project review as a pre-production demo with real migration evidence. It is not ready for market launch or full ShareGate comparison. Remaining gaps include 1,000-file and 10,000-file live certification, live empty-folder certification, certified metadata and permission writeback, OneDrive/Teams/Exchange/Box completion, controlled recovery testing, report download/open verification at scale, and provider-credential rotation before broader production enablement.
 
 ## Tight Reviewer-Facing Position
 
@@ -641,25 +643,26 @@ Important limitation:
 - Source public inventory counted 568 Google Drive folders.
 - Microsoft Graph found 61 target folders.
 - This is not file data loss: all 231 files and all bytes matched.
-- Historical Stage 1 did not prove first-class empty-folder preservation. Current code now models folders as first-class migration items and creates real target folders, but live certification is pending Render redeploy and a safe validation run.
+- Historical Stage 1 did not prove first-class empty-folder preservation. Current deployed code models folders as first-class migration items and creates real target folders, but live certification still requires a safe approved validation run.
 
 ## Build, Test, And Deployment Reports
 
-Latest local verification on 2026-06-18:
+Latest local verification on 2026-06-29:
 
 - `dotnet test .\Zettalogix.MigrationSuite.sln --no-build`: passed, 49/49 tests.
-- `npm test`: passed, 3/3 V2 frontend tests.
+- `npm run lint`: passed with zero warnings.
+- `npm test`: passed, 6/6 frontend tests.
 - `npm run build`: passed.
 - `npm audit`: passed, 0 vulnerabilities after upgrading Vite and related frontend dependencies.
 - Frontend build warning: one JavaScript chunk is larger than 500 kB after minification. This should be fixed later with route-level lazy loading or manual chunks.
 
-Latest recorded final demo report on 2026-06-18:
+Latest recorded final demo report on 2026-06-29:
 
 - Backend build passed: 0 warnings, 0 errors.
 - Backend tests passed: 49/49.
 - Frontend build passed.
-- Render backend live and healthy at `https://sharepoint-backend-g5vc.onrender.com`, but still serving old backend commit `7411998`; latest backend subtree `53d6f08` is pushed and awaits redeploy.
-- Vercel frontend redeployed and live at `https://zms-migration-suite.vercel.app`.
+- Render backend is live and healthy at `https://sharepoint-backend-g5vc.onrender.com` on commit `03573c7`; PostgreSQL is connected and schema readiness is `Ready`.
+- Vercel frontend was redeployed on 2026-06-29 and is live at `https://zms-migration-suite.vercel.app` with production security headers.
 - Supabase/Google login verified in browser.
 - Authenticated `/v2` and requested V2 pages loaded with 0 browser console errors.
 - Legacy reviewer routes loaded with no raw concatenated labels.
@@ -683,7 +686,7 @@ Security report:
 Known warnings:
 
 - Vite bundle chunk-size warning remains.
-- npm audit findings were resolved locally on 2026-06-18; redeploy the updated frontend lockfile before claiming this on Vercel.
+- npm audit findings are resolved and the updated frontend lockfile was deployed to Vercel on 2026-06-29.
 - Demo video was not recorded because the Playwright browser session did not expose video recording.
 - Previous V2 UI merge-state issue was resolved in commit `a42a0d1`.
 
@@ -873,7 +876,7 @@ These are the main gaps reviewers should know.
 
 - Production build passes.
 - Backend tests pass.
-- Initial frontend Vitest scaffold passes 3/3.
+- Frontend Vitest release suite passes 6/6.
 - Broader frontend route/component/E2E coverage is still needed.
 
 10. Source-code hygiene
@@ -905,7 +908,7 @@ Safe claims:
 - ZMS has working authentication and deployed frontend/backend health.
 - ZMS completed live Google Drive to SharePoint Online file migration stages with 0 failed files and matching byte verification.
 - ZMS has an enterprise migration readiness, planning, validation, reporting, AI-advisory, and governance review UI.
-- Backend tests pass 49/49, frontend tests pass 3/3, frontend production build passes, and npm audit reports 0 vulnerabilities locally.
+- Backend tests pass 49/49, frontend lint passes, frontend tests pass 6/6, frontend production build passes, and npm audit reports 0 vulnerabilities locally.
 
 Do not claim yet:
 
@@ -925,7 +928,8 @@ Use this short version in the review:
 | Test area | Result |
 | --- | --- |
 | Backend tests | Passed, 49/49 |
-| Frontend tests | Passed, 3/3 |
+| Frontend lint | Passed, zero warnings |
+| Frontend tests | Passed, 6/6 |
 | Frontend production build | Passed |
 | npm audit | Passed, 0 vulnerabilities locally |
 | Render backend health | Passed |
@@ -940,7 +944,7 @@ Use this short version in the review:
 | Demo screenshots | Captured |
 | Demo video | Not recorded |
 | Vite chunk warning | Present, accepted for demo |
-| npm audit findings | Resolved locally; redeploy updated frontend dependencies |
+| npm audit findings | Resolved locally and deployed to Vercel |
 
 ## Sources Used For ShareGate Comparison
 

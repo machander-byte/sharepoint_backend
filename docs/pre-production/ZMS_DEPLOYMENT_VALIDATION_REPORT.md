@@ -1,18 +1,18 @@
 # ZMS Deployment Validation Report
 
-Status date: 2026-06-18
+Status date: 2026-06-29
 
 ## Summary
 
-Latest code is pushed and the frontend is redeployed. The live backend is healthy, but Render is still serving the previous backend subtree commit. Do not claim the empty-folder backend fix is live until Render reports subtree commit `53d6f08` or later.
+Latest code is pushed and both frontend and backend are redeployed. Render reports backend commit `03573c7`, and hosted readiness confirms PostgreSQL connectivity and the required schema.
 
 ## Deployment Results
 
 | Item | Result |
 | --- | --- |
 | Frontend app source `master` push | Passed, `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
-| Backend subtree `main` push | Passed, `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` |
-| Render live commit | `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
+| Backend subtree `main` push | Passed, `03573c7911a9d875d61f98285e2442592692fcde` |
+| Render live commit | `03573c7911a9d875d61f98285e2442592692fcde` |
 | Render backend URL | `https://sharepoint-backend-g5vc.onrender.com` |
 | Vercel deployment | Passed, `dpl_GBcUFfeiDb9HTUbJGmSUcbiQD616` |
 | Vercel frontend URL | `https://zms-migration-suite.vercel.app` |
@@ -23,7 +23,7 @@ Latest code is pushed and the frontend is redeployed. The live backend is health
 
 | Endpoint | Result |
 | --- | --- |
-| `/api/version` | 200 OK, commit `7411998cac1c31cc945bc49b5e5357dd41fc1ab8` |
+| `/api/version` | 200 OK, commit `03573c7911a9d875d61f98285e2442592692fcde` |
 | `/api/health` | 200 Healthy, DB connected, schema ready |
 | `/api/status` | 200 Healthy, schema ready, queue empty |
 | CORS preflight from Vercel origin | 204, allow-origin returned |
@@ -70,8 +70,8 @@ Latest code is pushed and the frontend is redeployed. The live backend is health
 
 ## Known Limitations
 
-- Render redeploy to backend subtree `53d6f08` is pending.
-- Live empty-folder validation is blocked until the Render redeploy and safe live test approval.
+- Render redeploy is complete.
+- Live empty-folder validation requires safe live test approval.
 - Stage 2 1,000-file migration is pending.
 - Stage 3 10,000-file migration is pending.
 - Subscription/payment is not implemented.
