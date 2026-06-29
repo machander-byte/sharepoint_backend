@@ -198,12 +198,12 @@ app.MapControllers().RequireRateLimiting("ZmsApi");
 
 if (ShouldRunDatabaseSchemaInit(app.Configuration))
 {
-    _ = Task.Run(() => EnsureDatabaseCreatedAsync(app.Services, app.Logger, app.Configuration));
     app.Logger.LogWarning("Database schema initialization is enabled by ZMS_RUN_DB_SCHEMA_INIT. This should only be used for controlled schema maintenance.");
+    await EnsureDatabaseCreatedAsync(app.Services, app.Logger, app.Configuration);
 }
 else
 {
-    _ = Task.Run(() => MarkDatabaseSchemaInitializationSkippedAsync(app.Services, app.Logger));
+    await MarkDatabaseSchemaInitializationSkippedAsync(app.Services, app.Logger);
     app.Logger.LogInformation("Database schema initialization is disabled for normal startup. Health endpoints will perform bounded schema readiness checks.");
 }
 

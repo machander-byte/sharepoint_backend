@@ -11,7 +11,7 @@ afterEach(() => {
 describe("release guards", () => {
   it("renders a useful protected-workspace not-found page", () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <NotFoundPage />
       </MemoryRouter>
     );

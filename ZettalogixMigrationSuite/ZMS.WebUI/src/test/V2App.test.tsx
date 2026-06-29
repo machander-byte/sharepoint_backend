@@ -20,7 +20,7 @@ function renderV2(path = "/v2/command-center") {
   window.localStorage.setItem("zms_onboarding_completed", "true");
 
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <V2App />
     </MemoryRouter>
   );
@@ -35,7 +35,10 @@ describe("V2 review shell", () => {
     mockSession = null;
 
     render(
-      <MemoryRouter initialEntries={["/v2"]}>
+      <MemoryRouter
+        initialEntries={["/v2"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <Routes>
           <Route element={<RequireAuth />}>
             <Route path="/v2" element={<div>Protected V2 content</div>} />
