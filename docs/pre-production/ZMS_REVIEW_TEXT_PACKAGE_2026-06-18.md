@@ -654,14 +654,14 @@ Latest local verification on 2026-06-29:
 - `npm test`: passed, 6/6 frontend tests.
 - `npm run build`: passed.
 - `npm audit`: passed, 0 vulnerabilities after upgrading Vite and related frontend dependencies.
-- Frontend build warning: one JavaScript chunk is larger than 500 kB after minification. This should be fixed later with route-level lazy loading or manual chunks.
+- Frontend bundle hardening: Vite/Rolldown code splitting reduced the largest production JavaScript chunk to approximately 404 kB; no chunk-size warning remains.
 
 Latest recorded final demo report on 2026-06-29:
 
 - Backend build passed: 0 warnings, 0 errors.
 - Backend tests passed: 49/49.
 - Frontend build passed.
-- Render backend is live and healthy at `https://sharepoint-backend-g5vc.onrender.com` on commit `03573c7`; PostgreSQL is connected and schema readiness is `Ready`.
+- Render backend is live and healthy at `https://sharepoint-backend-g5vc.onrender.com` on commit `fa953f2`; PostgreSQL is connected and schema readiness is `Ready`.
 - Vercel frontend was redeployed on 2026-06-29 and is live at `https://zms-migration-suite.vercel.app` with production security headers.
 - Supabase/Google login verified in browser.
 - Authenticated `/v2` and requested V2 pages loaded with 0 browser console errors.
@@ -685,7 +685,7 @@ Security report:
 
 Known warnings:
 
-- Vite bundle chunk-size warning remains.
+- Vite bundle chunk-size warning was resolved on 2026-06-29 through explicit Rolldown code splitting.
 - npm audit findings are resolved and the updated frontend lockfile was deployed to Vercel on 2026-06-29.
 - Demo video was not recorded because the Playwright browser session did not expose video recording.
 - Previous V2 UI merge-state issue was resolved in commit `a42a0d1`.
@@ -943,7 +943,7 @@ Use this short version in the review:
 | Microsoft Graph byte verification | Passed |
 | Demo screenshots | Captured |
 | Demo video | Not recorded |
-| Vite chunk warning | Present, accepted for demo |
+| Vite chunk warning | Resolved; largest JavaScript chunk is approximately 404 kB |
 | npm audit findings | Resolved locally and deployed to Vercel |
 
 ## Sources Used For ShareGate Comparison

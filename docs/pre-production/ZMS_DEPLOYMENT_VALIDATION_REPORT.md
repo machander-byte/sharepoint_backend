@@ -4,15 +4,15 @@ Status date: 2026-06-29
 
 ## Summary
 
-Latest code is pushed and both frontend and backend are redeployed. Render reports backend commit `03573c7`, and hosted readiness confirms PostgreSQL connectivity and the required schema.
+Latest code is pushed and both frontend and backend are redeployed. Render reports backend commit `fa953f2`, and hosted readiness confirms PostgreSQL connectivity and the required schema.
 
 ## Deployment Results
 
 | Item | Result |
 | --- | --- |
 | Frontend app source `master` push | Passed, `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
-| Backend subtree `main` push | Passed, `03573c7911a9d875d61f98285e2442592692fcde` |
-| Render live commit | `03573c7911a9d875d61f98285e2442592692fcde` |
+| Backend subtree `main` push | Passed, `fa953f296177c7f356c9e9e4aae06a4e357f4f19` |
+| Render live commit | `fa953f296177c7f356c9e9e4aae06a4e357f4f19` |
 | Render backend URL | `https://sharepoint-backend-g5vc.onrender.com` |
 | Vercel deployment | Passed, `dpl_GBcUFfeiDb9HTUbJGmSUcbiQD616` |
 | Vercel frontend URL | `https://zms-migration-suite.vercel.app` |
@@ -23,7 +23,7 @@ Latest code is pushed and both frontend and backend are redeployed. Render repor
 
 | Endpoint | Result |
 | --- | --- |
-| `/api/version` | 200 OK, commit `03573c7911a9d875d61f98285e2442592692fcde` |
+| `/api/version` | 200 OK, commit `fa953f296177c7f356c9e9e4aae06a4e357f4f19` |
 | `/api/health` | 200 Healthy, DB connected, schema ready |
 | `/api/status` | 200 Healthy, schema ready, queue empty |
 | CORS preflight from Vercel origin | 204, allow-origin returned |

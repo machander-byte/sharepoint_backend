@@ -38,8 +38,8 @@ Do not place passwords in Git, docs, screenshots, or chat transcripts. Share rev
 | Backend tests | Passed, 49/49 |
 | Frontend build | Passed |
 | Latest frontend app source pushed | Passed, commit `8afdb8e9cc1817f804a81710aa1ab51b88fca907` |
-| Backend subtree pushed | Passed, commit `03573c7911a9d875d61f98285e2442592692fcde` |
-| Render deployed | Healthy on commit `03573c7911a9d875d61f98285e2442592692fcde`; PostgreSQL connected and schema ready |
+| Backend subtree pushed | Passed, commit `fa953f296177c7f356c9e9e4aae06a4e357f4f19` |
+| Render deployed | Healthy on commit `fa953f296177c7f356c9e9e4aae06a4e357f4f19`; PostgreSQL connected and schema ready |
 | Vercel deployed | Passed, deployment `dpl_GBcUFfeiDb9HTUbJGmSUcbiQD616` |
 | Login | Passed with Google/Supabase browser flow |
 | Authenticated `/v2` | Passed |

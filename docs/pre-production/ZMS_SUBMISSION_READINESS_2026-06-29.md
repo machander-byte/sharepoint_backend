@@ -10,7 +10,7 @@ This verdict does not certify ZMS for market launch, production-scale tenant mig
 
 - Frontend: `https://zms-migration-suite.vercel.app`
 - Backend: `https://sharepoint-backend-g5vc.onrender.com`
-- Backend commit: `03573c7911a9d875d61f98285e2442592692fcde`
+- Backend commit: `fa953f296177c7f356c9e9e4aae06a4e357f4f19`
 - Hosted readiness: `200 Healthy`
 - Database: PostgreSQL connected
 - Schema: `Ready`
@@ -38,12 +38,15 @@ This verdict does not certify ZMS for market launch, production-scale tenant mig
 - Resumed the paused Supabase project.
 - Rotated the previously exposed Supabase database password.
 - Updated Render with the replacement credential without storing it in source control.
-- Deployed backend commit `03573c7`.
+- Deployed backend commit `fa953f2`.
 - Deployed the current frontend and promoted the documented production alias.
 - Added CSP, frame protection, content-type protection, referrer policy, permissions policy, and an OAuth-compatible opener policy.
 - Changed backend readiness endpoints to return `503` when the database/schema is unhealthy.
 - Added a real ESLint release gate and release-guard tests.
 - Removed project-specific secret values from active source templates.
+- Split the former 806.81 kB frontend bundle into focused chunks; the largest production JavaScript chunk is approximately 404 kB.
+- Added EF dictionary value comparers and made controlled database initialization complete before background job recovery begins.
+- Verified authenticated production routes for Command Center, Migrations, Validation, Reports, and the protected not-found page with zero console errors, failed requests, or error responses.
 
 ## Honest Submission Boundary
 

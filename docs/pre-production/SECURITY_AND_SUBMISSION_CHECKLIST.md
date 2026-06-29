@@ -154,7 +154,7 @@ Mark the product ready for company review only when:
 
 - Latest frontend app source commit `8afdb8e9cc1817f804a81710aa1ab51b88fca907` was pushed to `origin/master` and deployed to Vercel.
 - Latest backend subtree commit `53d6f082c3b1e9618c0e59a4eac54d3a26761a92` was pushed to `origin/main`.
-- Superseded on 2026-06-29: Render now reports live backend commit `03573c7911a9d875d61f98285e2442592692fcde`, which includes the empty-folder implementation and release hardening.
+- Superseded on 2026-06-29: Render now reports live backend commit `fa953f296177c7f356c9e9e4aae06a4e357f4f19`, which includes the empty-folder implementation, deterministic controlled schema startup, and EF value-comparer hardening.
 - Vercel production deployment passed and the public alias serves the latest frontend bundle with the Render API base URL.
 - Local backend tests pass 49/49, frontend tests pass 6/6, frontend lint and build pass, and npm audit reports 0 vulnerabilities.
 - Authenticated V2 browser walkthrough completed with 0 console errors.
@@ -164,10 +164,11 @@ Mark the product ready for company review only when:
 
 - Supabase was resumed from its paused state.
 - The Supabase database password was rotated and the Render connection string was updated without storing the credential in source control.
-- Render backend commit `03573c7911a9d875d61f98285e2442592692fcde` is live.
+- Render backend commit `fa953f296177c7f356c9e9e4aae06a4e357f4f19` is live.
 - Hosted `/api/status` returns `200 Healthy`; PostgreSQL is connected and the required schema is ready.
 - Vercel production was redeployed and `https://zms-migration-suite.vercel.app` points to the new deployment.
 - Frontend CSP, frame protection, content-type protection, referrer policy, permissions policy, and OAuth-compatible opener policy are present.
 - Production Google OAuth completed and opened the authenticated dashboard.
 - Local validation passed: ESLint, 6 frontend tests, frontend production build, npm audit, backend Release build, 49 backend tests, backend publish, and NuGet vulnerability scan.
+- Authenticated production route checks passed for Command Center, Migrations, Validation, Reports, and the protected not-found page with zero console errors, failed requests, or error responses.
 - This is approved for controlled project submission as a pre-production demo. It is not a market-launch or production-scale certification.
