@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ZMS.Core.Enums;
 using ZMS.Core.Models;
@@ -47,6 +48,10 @@ public class ZmsDbContext : DbContext, IDataProtectionKeyContext
                 ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 : JsonSerializer.Deserialize<Dictionary<string, string>>(value, JsonOptions)
                     ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+        var dictionaryComparer = new ValueComparer<Dictionary<string, string>>(
+            (left, right) => DictionariesEqual(left, right),
+            value => GetDictionaryHashCode(value),
+            value => CloneDictionary(value));
 
         modelBuilder.Entity<ConnectionProfile>(builder =>
         {
@@ -60,7 +65,9 @@ public class ZmsDbContext : DbContext, IDataProtectionKeyContext
             builder.Property(connection => connection.ClientId).HasMaxLength(200);
             builder.Property(connection => connection.TenantId).HasMaxLength(200);
             builder.Property(connection => connection.RootPath).HasMaxLength(500);
-            builder.Property(connection => connection.AdditionalSettings).HasConversion(dictionaryConverter);
+            builder.Property(connection => connection.AdditionalSettings)
+                .HasConversion(dictionaryConverter)
+                .Metadata.SetValueComparer(dictionaryComparer);
         });
 
         modelBuilder.Entity<MigrationJob>(builder =>
@@ -93,7 +100,9 @@ public class ZmsDbContext : DbContext, IDataProtectionKeyContext
             builder.Property(item => item.Status).HasConversion<string>().HasMaxLength(50);
             builder.Property(item => item.EnterpriseState).HasConversion<string>().HasMaxLength(50);
             builder.Property(item => item.ErrorMessage).HasMaxLength(2000);
-            builder.Property(item => item.Metadata).HasConversion(dictionaryConverter);
+            builder.Property(item => item.Metadata)
+                .HasConversion(dictionaryConverter)
+                .Metadata.SetValueComparer(dictionaryComparer);
             builder.HasIndex(item => new { item.JobId, item.Status });
         });
 
@@ -116,6 +125,47 @@ public class ZmsDbContext : DbContext, IDataProtectionKeyContext
         ConfigureEnterpriseMigration(modelBuilder);
         ConfigureAuditLogs(modelBuilder);
     }
+
+    private static bool DictionariesEqual(
+        Dictionary<string, string>? left,
+        Dictionary<string, string>? right)
+    {
+        if (ReferenceEquals(left, right))
+        {
+            return true;
+        }
+
+        if (left is null || right is null || left.Count != right.Count)
+        {
+            return false;
+        }
+
+        return left.All(pair =>
+            right.TryGetValue(pair.Key, out var rightValue)
+            && string.Equals(pair.Value, rightValue, StringComparison.Ordinal));
+    }
+
+    private static int GetDictionaryHashCode(Dictionary<string, string>? value)
+    {
+        if (value is null)
+        {
+            return 0;
+        }
+
+        var hash = new HashCode();
+        foreach (var pair in value.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            hash.Add(pair.Key, StringComparer.OrdinalIgnoreCase);
+            hash.Add(pair.Value, StringComparer.Ordinal);
+        }
+
+        return hash.ToHashCode();
+    }
+
+    private static Dictionary<string, string> CloneDictionary(Dictionary<string, string>? value) =>
+        value is null
+            ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string>(value, StringComparer.OrdinalIgnoreCase);
 
     private static void ConfigureAuditLogs(ModelBuilder modelBuilder)
     {
