@@ -40,9 +40,10 @@ public class HealthController : ControllerBase
     public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
         var (database, schema) = await GetDatabaseAndSchemaStatusAsync(cancellationToken);
-        var status = database.Healthy && schema.Ready ? "Healthy" : "Degraded";
+        var healthy = database.Healthy && schema.Ready;
+        var status = healthy ? "Healthy" : "Degraded";
 
-        return Ok(new
+        return StatusCode(healthy ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable, new
         {
             Status = status,
             UtcNow = DateTimeOffset.UtcNow,

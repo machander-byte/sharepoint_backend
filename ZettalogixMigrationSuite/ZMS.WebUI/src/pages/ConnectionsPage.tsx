@@ -1,5 +1,5 @@
 import { Plus, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ConnectionCard from "../components/ConnectionCard";
 import ConnectionModal from "../components/ConnectionModal";
 import PageHeader from "../components/PageHeader";
@@ -35,7 +35,7 @@ export default function ConnectionsPage(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  const loadConnections = async () => {
+  const loadConnections = useCallback(async () => {
     setLoading(true);
     setLoadError("");
     try {
@@ -48,11 +48,11 @@ export default function ConnectionsPage(): JSX.Element {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dispatch]);
 
   useEffect(() => {
     void loadConnections();
-  }, []);
+  }, [loadConnections]);
 
   const filteredConnections = useMemo(() => {
     const normalized = searchTerm.trim().toLowerCase();

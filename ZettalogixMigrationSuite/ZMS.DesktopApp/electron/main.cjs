@@ -22,7 +22,7 @@ function createWindow() {
     minWidth: 1100,
     minHeight: 760,
     backgroundColor: "#0e1b2d",
-    title: "Zettalogix Migration Suite",
+    title: "zettalogixmigrationsuite",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,

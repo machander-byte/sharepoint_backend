@@ -16,6 +16,7 @@ import MigrationDetailPage from "../pages/MigrationDetailPage";
 import MigrationsPage from "../pages/MigrationsPage";
 import MigrationPlannerPage from "../pages/MigrationPlannerPage";
 import ModernizationPage from "../pages/ModernizationPage";
+import NotFoundPage from "../pages/NotFoundPage";
 import OperatorControlCenterPage from "../pages/OperatorControlCenterPage";
 import PackageCenterPage from "../pages/PackageCenterPage";
 import PermissionsPage from "../pages/PermissionsPage";
@@ -56,7 +57,7 @@ export default function App(): JSX.Element {
           <Route path="/ai" element={<AIRecommendationsPage />} />
           <Route path="/help" element={<HelpCenterPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
     </Routes>

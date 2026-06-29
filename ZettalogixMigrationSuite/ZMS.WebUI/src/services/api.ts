@@ -1,7 +1,6 @@
 import {
   AppSettings,
   ConnectionRecord,
-  ConnectionStatus,
   ConnectionTestResult,
   CreateConnectionInput,
   CreateJobInput,
@@ -14,8 +13,9 @@ import {
 import { formatErrorForToast } from "../utils/errorHelp";
 import { createClient } from "../lib/client";
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5206").replace(/\/+$/, "");
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 const settingsStorageKey = "zms-web-ui-settings";
+const missingApiBaseUrlMessage = "VITE_API_BASE_URL is not configured. Set it to the ZMS API origin before using backend-backed workflows.";
 
 const connectionHealth = new Map<string, ConnectionTestResult>();
 
@@ -151,10 +151,14 @@ const defaultSettings: AppSettings = {
 };
 
 export function getApiBaseUrl(): string {
-  return apiBaseUrl;
+  return apiBaseUrl || "VITE_API_BASE_URL not configured";
 }
 
 export function getReportDownloadUrl(path: string): string {
+  if (!apiBaseUrl) {
+    throw new Error(missingApiBaseUrlMessage);
+  }
+
   return `${apiBaseUrl}/api/reports${path}`;
 }
 
@@ -184,6 +188,10 @@ function buildGoogleDriveFolderUrl(folderId: string): string {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!apiBaseUrl) {
+    throw new Error(missingApiBaseUrlMessage);
+  }
+
   const authHeaders = await getAuthorizationHeaders();
   let response: Response;
   try {
@@ -219,6 +227,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 async function downloadReportFile(path: string): Promise<void> {
+  if (!apiBaseUrl) {
+    throw new Error(missingApiBaseUrlMessage);
+  }
+
   const authHeaders = await getAuthorizationHeaders();
   let response: Response;
 
@@ -253,6 +265,10 @@ async function downloadReportFile(path: string): Promise<void> {
 }
 
 async function downloadApiFile(path: string, fallbackFileName: string): Promise<void> {
+  if (!apiBaseUrl) {
+    throw new Error(missingApiBaseUrlMessage);
+  }
+
   const authHeaders = await getAuthorizationHeaders();
   let response: Response;
 

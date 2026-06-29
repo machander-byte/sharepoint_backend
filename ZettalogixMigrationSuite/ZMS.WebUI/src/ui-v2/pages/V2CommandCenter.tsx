@@ -1,5 +1,5 @@
 import { Activity, CheckCircle2, Database, FileText } from "lucide-react";
-import { commandMetrics, migrationEvidence, stageRows } from "../data/v2DashboardData";
+import { stageRows } from "../data/v2DashboardData";
 import type { V2ReadOnlySnapshot, V2RuntimeStatus } from "../data/v2ReadOnlyAdapter";
 import { V2Card, V2EvidenceRow, V2LimitationBanner, V2MetricCard, V2PageHeader, V2StatusPill, V2Table } from "../components/V2Primitives";
 

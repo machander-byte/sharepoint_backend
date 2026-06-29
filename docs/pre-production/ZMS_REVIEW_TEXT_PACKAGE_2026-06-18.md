@@ -44,7 +44,7 @@ The next milestone should be "credible migration pilot platform," not "ShareGate
 
 ## Project Summary
 
-Project name: ZMS - Zettalogix Migration Suite.
+Project name: zettalogixmigrationsuite (ZMS).
 
 ZMS started as a simple "Google Drive or cloud storage to SharePoint" migration idea. It has evolved into an enterprise migration readiness and orchestration platform. The current product is not only a file mover. It helps a migration team understand source content, identify risks, prepare migration waves, validate Go/No-Go readiness, simulate execution, monitor migration state, verify target results, and generate review evidence.
 

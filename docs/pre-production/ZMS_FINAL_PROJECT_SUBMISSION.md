@@ -4,7 +4,7 @@ Status date: 2026-06-18
 
 ## Project Name
 
-ZMS - Zettalogix Migration Suite
+zettalogixmigrationsuite (ZMS)
 
 ## Final Frontend URL
 

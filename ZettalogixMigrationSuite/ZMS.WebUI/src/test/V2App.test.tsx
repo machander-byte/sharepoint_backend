@@ -52,7 +52,7 @@ describe("V2 review shell", () => {
   it("renders the V2 sidebar and topbar for an authenticated reviewer", async () => {
     renderV2();
 
-    expect(await screen.findByText("Zettalogix")).toBeInTheDocument();
+    expect(await screen.findByText("zettalogixmigrationsuite V2")).toBeInTheDocument();
     expect(screen.getAllByText("Command Center").length).toBeGreaterThan(0);
     expect(screen.getByText("Operate")).toBeInTheDocument();
     expect(screen.getByText("Prepare")).toBeInTheDocument();

@@ -1531,7 +1531,13 @@ export const zmsApi = {
       } catch { /* fallback */ }
     }
     const result = mockPreMigrationValidations.get(validationId);
-    if (result) exportType === "json" ? downloadJson(`pre-migration-validation-${validationId}.json`, result) : downloadCsv(`pre-migration-checks-${validationId}.csv`, result.checks as unknown as Array<Record<string, unknown>>);
+    if (result) {
+      if (exportType === "json") {
+        downloadJson(`pre-migration-validation-${validationId}.json`, result);
+      } else {
+        downloadCsv(`pre-migration-checks-${validationId}.csv`, result.checks as unknown as Array<Record<string, unknown>>);
+      }
+    }
     return { source: "mock" };
   },
 
@@ -1787,7 +1793,13 @@ export const zmsApi = {
       } catch { /* fallback */ }
     }
     const preview = mockTransferPreviews.get(previewId);
-    if (preview) exportType === "json" ? downloadJson(`transfer-preview-${previewId}.json`, preview) : downloadCsv(`transfer-plan-${previewId}.csv`, preview.transferPlan as unknown as Array<Record<string, unknown>>);
+    if (preview) {
+      if (exportType === "json") {
+        downloadJson(`transfer-preview-${previewId}.json`, preview);
+      } else {
+        downloadCsv(`transfer-plan-${previewId}.csv`, preview.transferPlan as unknown as Array<Record<string, unknown>>);
+      }
+    }
     return { source: "mock" };
   },
 
@@ -1800,7 +1812,13 @@ export const zmsApi = {
       } catch { /* fallback */ }
     }
     const pilot = mockPilotRuns.get(pilotRunId);
-    if (pilot) exportType === "json" ? downloadJson(`pilot-result-${pilotRunId}.json`, pilot) : downloadCsv(`pilot-items-${pilotRunId}.csv`, pilot.items as unknown as Array<Record<string, unknown>>);
+    if (pilot) {
+      if (exportType === "json") {
+        downloadJson(`pilot-result-${pilotRunId}.json`, pilot);
+      } else {
+        downloadCsv(`pilot-items-${pilotRunId}.csv`, pilot.items as unknown as Array<Record<string, unknown>>);
+      }
+    }
     return { source: "mock" };
   },
 

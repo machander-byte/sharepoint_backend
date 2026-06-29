@@ -1,6 +1,5 @@
 import { Activity, Database, Server, ShieldAlert } from "lucide-react";
 import type { V2ReadOnlySnapshot, V2RuntimeStatus } from "../data/v2ReadOnlyAdapter";
-import { migrationEvidence } from "../data/v2DashboardData";
 import { V2Card, V2EvidenceRow, V2LimitationBanner, V2PageHeader, V2StatusPill } from "../components/V2Primitives";
 
 interface V2MonitorProps {

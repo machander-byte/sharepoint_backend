@@ -74,8 +74,8 @@ export default function AuthPage(): JSX.Element {
         <div className={styles.heroBrand}>
           <div className={styles.brandMark}>Z</div>
           <div>
-            <span>Zettalogix</span>
-            <strong>Migration Suite</strong>
+            <span>ZMS</span>
+            <strong>zettalogixmigrationsuite</strong>
           </div>
         </div>
 

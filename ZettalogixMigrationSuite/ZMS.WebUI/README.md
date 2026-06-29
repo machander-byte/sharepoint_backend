@@ -1,6 +1,6 @@
 # ZMS Frontend Web UI
 
-This project is the frontend service for Zettalogix Migration Suite.
+This project is the frontend service for zettalogixmigrationsuite (ZMS).
 
 It owns:
 
@@ -23,7 +23,7 @@ Required frontend API setting:
 
 ```env
 VITE_API_BASE_URL=http://localhost:5206
-VITE_SUPABASE_URL=https://hxptmbphcdyzhmwnimwh.supabase.co
+VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
@@ -32,10 +32,10 @@ Supabase Auth local settings:
 - Site URL: `http://localhost:5173`
 - Redirect URLs: `http://localhost:5173/auth/callback`, `http://localhost:5173/*`, `http://127.0.0.1:5173/auth/callback`, `http://127.0.0.1:5173/*`
 - Enabled providers: Google OAuth and Email magic links
-- OAuth authorization endpoint: `https://hxptmbphcdyzhmwnimwh.supabase.co/auth/v1/oauth/authorize`
-- OAuth token endpoint: `https://hxptmbphcdyzhmwnimwh.supabase.co/auth/v1/oauth/token`
-- JWKS endpoint: `https://hxptmbphcdyzhmwnimwh.supabase.co/auth/v1/.well-known/jwks.json`
-- OIDC discovery: `https://hxptmbphcdyzhmwnimwh.supabase.co/auth/v1/.well-known/openid-configuration`
+- OAuth authorization endpoint: `https://your-project.supabase.co/auth/v1/oauth/authorize`
+- OAuth token endpoint: `https://your-project.supabase.co/auth/v1/oauth/token`
+- JWKS endpoint: `https://your-project.supabase.co/auth/v1/.well-known/jwks.json`
+- OIDC discovery: `https://your-project.supabase.co/auth/v1/.well-known/openid-configuration`
 
 Only `VITE_*` values are available in browser code. Do not put backend secrets, database connection strings, SharePoint client secrets, Google client secrets, or refresh tokens in this project.
 

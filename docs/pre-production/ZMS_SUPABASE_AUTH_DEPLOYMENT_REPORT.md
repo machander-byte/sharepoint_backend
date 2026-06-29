@@ -6,7 +6,7 @@ Status date: 2026-06-14
 
 | Item | Result |
 | --- | --- |
-| Project ref | `hxptmbphcdyzhmwnimwh` |
+| Project ref | Redacted; configure with `Supabase__Auth__Authority` and frontend `VITE_SUPABASE_URL`. |
 | Frontend Site URL | `https://zms-migration-suite.vercel.app` |
 | Redirect URL | `https://zms-migration-suite.vercel.app/auth/callback` present |
 

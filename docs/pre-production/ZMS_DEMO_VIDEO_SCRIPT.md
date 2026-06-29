@@ -11,7 +11,7 @@ Screenshots were captured instead and indexed in `docs/pre-production/ZMS_DEMO_S
 ## Two-Minute Narration Script
 
 1. Open `https://zms-migration-suite.vercel.app`.
-   "This is the Zettalogix Migration Suite final demo / pre-production review build."
+   "This is the zettalogixmigrationsuite (ZMS) final demo / pre-production review build."
 
 2. Show the login screen.
    "The login page is clean and reviewer-focused. It does not show secrets, backend URLs, debug values, or mock counters."

@@ -44,8 +44,8 @@ export function V2Sidebar({ activePage, tourTargetPage, onNavigate }: V2SidebarP
   return (
     <aside className="zms-v2-sidebar" aria-label="ZMS UI V2 navigation">
       <div className="zms-v2-brand">
-        <strong>Zettalogix</strong>
-        <span>Migration Suite V2</span>
+        <strong>ZMS</strong>
+        <span>zettalogixmigrationsuite V2</span>
       </div>
 
       {groups.map((group) => (

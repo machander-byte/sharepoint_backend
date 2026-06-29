@@ -56,7 +56,7 @@ builder.Services.AddControllers(options => options.Filters.Add(new AuthorizeFilt
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 var supabaseAuthority = (builder.Configuration["Supabase:Auth:Authority"]
-    ?? "https://hxptmbphcdyzhmwnimwh.supabase.co/auth/v1").TrimEnd('/');
+    ?? "https://your-project.supabase.co/auth/v1").TrimEnd('/');
 var supabaseAudience = builder.Configuration["Supabase:Auth:Audience"] ?? "authenticated";
 
 builder.Services

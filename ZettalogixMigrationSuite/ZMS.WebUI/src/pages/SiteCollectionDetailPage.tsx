@@ -6,7 +6,6 @@ import EmptyState from "../components/EmptyState";
 import PageHeader from "../components/PageHeader";
 import RiskBadge from "../components/RiskBadge";
 import StatCard from "../components/StatCard";
-import StatusBadge from "../components/StatusBadge";
 import { siteCollections } from "../data/zmsMockData";
 
 const tabs = ["Structure", "Libraries", "Lists", "Metadata", "Permissions", "Edge Cases"] as const;

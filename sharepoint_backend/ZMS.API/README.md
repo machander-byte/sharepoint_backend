@@ -29,7 +29,7 @@ Do not commit the real Supabase database password. Keep `ConnectionStrings__ZmsD
 Supabase JWT validation:
 
 ```powershell
-$env:Supabase__Auth__Authority = "https://hxptmbphcdyzhmwnimwh.supabase.co/auth/v1"
+$env:Supabase__Auth__Authority = "https://your-project.supabase.co/auth/v1"
 $env:Supabase__Auth__Audience = "authenticated"
 ```
 
