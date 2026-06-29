@@ -4,7 +4,7 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile.api
     dockerContext: .
-    healthCheckPath: /api/health
+    healthCheckPath: /api/status
     plan: free
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -16,7 +16,7 @@ services:
       - key: DataProtection__KeyStorage
         value: Database
       - key: Supabase__Auth__Authority
-        value: https://hxptmbphcdyzhmwnimwh.supabase.co/auth/v1
+        sync: false
       - key: Supabase__Auth__Audience
         value: authenticated
       - key: Authorization__EnforceRoles
